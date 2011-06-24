@@ -13,6 +13,8 @@
 
 #include <asm/vectors.h>
 
+.begin schedule
+
 /*
  * void *memset(void *dst, int c, size_t length)
  *
@@ -158,3 +160,5 @@ memset:
 memset_fixup:
 	movi	a2, 0
 	retw
+
+.end schedule

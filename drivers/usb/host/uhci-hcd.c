@@ -40,6 +40,7 @@
 #include <linux/usb.h>
 #include <linux/bitops.h>
 #include <linux/dmi.h>
+#include <linux/compiler.h>
 
 #include <asm/uaccess.h>
 #include <asm/io.h>
@@ -923,12 +924,27 @@ static const struct hc_driver uhci_driver = {
 	.hub_control =		uhci_hub_control,
 };
 
+#if defined(CONFIG_USE_XTENSA_XCC_COMPILER)
+/*
+ * Problem Repoort: 22497:
+ *    Perhaps fixed or not needed.
+ */
+static const struct pci_device_id uhci_pci_ids[] __attribute__ ((aligned (16))) = { {
+	/* handle any USB UHCI controller */
+	PCI_DEVICE_CLASS(PCI_CLASS_SERIAL_USB_UHCI, ~0),
+	.driver_data =	(unsigned long) &uhci_driver,
+	}, { /* end: all zeroes */ }
+};
+
+#else
+
 static const struct pci_device_id uhci_pci_ids[] = { {
 	/* handle any USB UHCI controller */
 	PCI_DEVICE_CLASS(PCI_CLASS_SERIAL_USB_UHCI, ~0),
 	.driver_data =	(unsigned long) &uhci_driver,
 	}, { /* end: all zeroes */ }
 };
+#endif
 
 MODULE_DEVICE_TABLE(pci, uhci_pci_ids);
 

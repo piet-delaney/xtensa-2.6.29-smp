@@ -4,11 +4,66 @@
 
 ifdef CONFIG_USE_XTENSA_XCC_COMPILER
 #
-# /tcp_input.c:
+# WORKAROUNDS for XCC Optimization Bugs when compiling -O3:
+# =========================================================
+#
+# CONFIG_XTENSA_ALT_EXTRA_CFLAGS can be set -O2 when  CONFIG_XTENSA_EXTRA_CFLAGS
+# is set to -O3 to allow most of the kernel code to be compiled -O3 and a few
+# functions like those below to be compiled -O2 till the XCC bugs are resolved.
+#
+# ./tcp_input.c:
+# --------------
 #	Signal: Segmentation fault in Global Optimization -- Local RVI phase.
 #	Error: Signal Segmentation fault in phase Global Optimization -- Local RVI -- processing aborted
+#	xt-xcc ERROR:  /././fac/vol6/software/pdelaney/Work/cottonwood_1/swtools-x86-linux/libexec/xcc/be ...
+#	               ... died due to signal 4
+#	Bug: 22625
 #
-EXTRA_CFLAGS += -O2
+# ./tcp_output.c:
+# ---------------
+#	Signal: Segmentation fault in Global Optimization -- Local RVI phase.
+#	Error: Signal Segmentation fault in phase Global Optimization -- Local RVI -- processing aborted
+#	xt-xcc ERROR:  /././fac/vol6/software/pdelaney/Work/cottonwood_1/swtools-x86-linux/libexec/xcc/be...
+#		       ... died due to signal 4
+#	Bug: 22625
+#
+# ./tcp_timer.c:
+# --------------
+#	Signal: Segmentation fault in Global Optimization -- Local RVI phase.
+#	Error: Signal Segmentation fault in phase Global Optimization -- Local RVI -- processing aborted
+#	xt-xcc ERROR:  /././fac/vol6/software/pdelaney/Work/cottonwood_1/swtools-x86-linux/libexec/xcc/be ...
+#		       ... died due to signal 4
+#	Bug: 22625
+#
+# ./tcp_ipv4.c:
+# -------------
+#        ### Assertion failure at line 562 of 
+#	     /home/pdelaney/work/cottonwood_1/p4root/Xtensa/Software/xcc/be/opt/opt_find.cxx:
+#        ### Compiler Error in file /export2/src/$ARCH/$PLATFORM.25-Mar-2011.xcc/Linux_*/linux-29/net/ipv4/tcp_ipv4.c ...
+#	 ... during Global Optimization -- New PRE: Expr hoisting. phase:
+#        ### Unknown DEFREP kind
+#        Signal: Aborted in Global Optimization -- New PRE: Expr hoisting. phase.
+#        Error: Signal Aborted in phase Global Optimization -- New PRE: Expr hoisting. -- processing aborted
+#        xt-xcc ERROR:  /././fac/vol6/software/pdelaney/Work/cottonwood_1/swtools-x86-linux/libexec/xcc/be ...
+#		        ... died due to signal 4
+#	 Bug: 22626
+#
+#
+# NOTE:
+#  	Changing CFLAGS_$(file)_.o below DOESN'T cause the object to be re-made.
+#
+#
+XTENSA_ALT_EXTRA_CFLAGS := $(strip $(subst ",,$(CONFIG_XTENSA_ALT_EXTRA_CFLAGS)))#")))
+
+# XTENSA_XCC_WORKAROUND_22625_ENABLED still required as of xcc-9.0.2 (09002)
+CFLAGS_tcp_input.o  += $(call xcc-ifversion, -lt, 99003,  $(XTENSA_ALT_EXTRA_CFLAGS))
+CFLAGS_tcp_output.o += $(call xcc-ifversion, -lt, 99003,  $(XTENSA_ALT_EXTRA_CFLAGS))
+CFLAGS_tcp_timer.o  += $(call xcc-ifversion, -lt, 99003,  $(XTENSA_ALT_EXTRA_CFLAGS))
+
+# XTENSA_XCC_WORKAROUND_22626_ENABLED still required as xcc-9.0.2 (09002)
+CFLAGS_tcp_ipv4.o   += $(call xcc-ifversion, -lt, 99003,  $(XTENSA_ALT_EXTRA_CFLAGS))
+
+# CFLAGS_tcp.o = -save-temps
 endif
 
 

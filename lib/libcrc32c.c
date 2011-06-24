@@ -36,12 +36,16 @@
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/compiler.h>
 
 static struct crypto_shash *tfm;
 
 u32 crc32c(u32 crc, const void *address, unsigned int length)
 {
-#ifdef CONFIG_USE_XTENSA_XCC_COMPILER
+#if defined(XTENSA_XCC_WORKAROUND_22663_ENABLED)
+	/*
+	 * WorkAround for XCC Problem Report: 22663
+	 */
 	int descsize = crypto_shash_descsize(tfm);
 	struct {
                 struct shash_desc shash;
@@ -50,7 +54,7 @@ u32 crc32c(u32 crc, const void *address, unsigned int length)
 	int err;
 	u32 rv;
 
-	desc.ctx =  (char *) kmalloc(descsize, GFP_KERNEL);	
+	desc.ctx =  (char *) kmalloc(descsize, GFP_KERNEL);
 
 #else
 	struct {
@@ -67,7 +71,7 @@ u32 crc32c(u32 crc, const void *address, unsigned int length)
 	err = crypto_shash_update(&desc.shash, address, length);
 	BUG_ON(err);
 
-#ifdef CONFIG_USE_XTENSA_XCC_COMPILER
+#if defined(XTENSA_XCC_WORKAROUND_22663_ENABLED)
 	rv = *(u32 *)desc.ctx;
 	kfree(desc.ctx);
 	return(rv);

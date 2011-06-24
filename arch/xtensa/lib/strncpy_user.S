@@ -11,6 +11,8 @@
  *  Copyright (C) 2002 - 2009 Tensilica Inc.
  */
 
+.begin schedule
+
 #include <asm/vectors.h>
 #include <linux/errno.h>
 
@@ -223,3 +225,4 @@ fixup_l:
 	movi	a2, -EFAULT
 	retw
 
+.end schedule

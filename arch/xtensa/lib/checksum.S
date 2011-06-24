@@ -18,6 +18,8 @@
 #include <linux/linkage.h>
 #include <asm/vectors.h>
 
+.begin schedule
+
 /*
  * computes a partial checksum, e.g. for TCP/UDP fragments
  */
@@ -406,4 +408,6 @@ DST(	s8i	a8, a3, 1	)
 	retw
 
 .previous
+
+.end schedule
 

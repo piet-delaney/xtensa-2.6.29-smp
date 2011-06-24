@@ -29,6 +29,8 @@
 #include <asm/signal.h>
 #include <asm/tlbflush.h>
 
+.begin schedule
+
 #if 0
 /*
  * NOT BEING USED
@@ -387,4 +389,6 @@ ENTRY(fast_coprocessor)
 	rfe
 
 #endif /* XTENSA_HAVE_COPROCESSORS */
+
+.end schedule
 

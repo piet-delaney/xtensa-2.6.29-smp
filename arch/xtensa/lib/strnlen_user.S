@@ -13,6 +13,8 @@
 
 #include <asm/vectors.h>
 
+.begin schedule
+
 /* Load or store instructions that may cause exceptions use the EX macro. */
 
 #define EX(insn,reg1,reg2,offset,handler)	\
@@ -139,6 +141,8 @@ __strnlen_user:
 	addi	a4, a4, 3+1	# point just beyond zero byte
 	sub	a2, a4, a2	# subtract to get length
 	retw
+
+.end schedule
 
 	.section .fixup, "ax"
 	.align	4

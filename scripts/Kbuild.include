@@ -121,14 +121,27 @@ cc-option-align = $(subst -functions=0,,\
 # Usage gcc-ver := $(call cc-version)
 cc-version = $(shell $(CONFIG_SHELL) $(srctree)/scripts/gcc-version.sh $(CC))
 
+# xcc-version
+# Usage xcc-ver := $(call xcc-version)
+xcc-version = $(shell $(CONFIG_SHELL) $(srctree)/scripts/xcc-version.sh $(CC))
+
 # cc-fullversion
 # Usage gcc-ver := $(call cc-fullversion)
 cc-fullversion = $(shell $(CONFIG_SHELL) \
 	$(srctree)/scripts/gcc-version.sh -p $(CC))
 
+# xcc-fullversion
+# Usage xcc-ver := $(call xcc-fullversion)
+xcc-fullversion = $(shell $(CONFIG_SHELL) \
+	$(srctree)/scripts/xcc-version.sh -p $(CC))
+
 # cc-ifversion
 # Usage:  EXTRA_CFLAGS += $(call cc-ifversion, -lt, 0402, -O1)
 cc-ifversion = $(shell [ $(call cc-version, $(CC)) $(1) $(2) ] && echo $(3))
+
+# xcc-ifversion
+# Usage:  EXTRA_CFLAGS += $(call xcc-ifversion, -lt, 09002, -O1)
+xcc-ifversion = $(shell [ $(call xcc-version, $(CC)) $(1) $(2) ] && echo $(3))
 
 # ld-option
 # Usage: ldflags += $(call ld-option, -Wl$(comma)--hash-style=both)

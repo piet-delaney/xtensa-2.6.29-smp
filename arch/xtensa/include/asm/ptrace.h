@@ -101,6 +101,7 @@ struct pt_regs {
 
 	/* Additional configurable registers that are used by the compiler. */
 	xtregs_opt_t xtregs_opt;
+	unsigned long br; 		/* Used in workaround for PR 22651 */
 
 	/* Make sure the areg field is 16 bytes aligned. */
 	int align[0] __attribute__ ((aligned(16)));

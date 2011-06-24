@@ -49,12 +49,7 @@ extern void __chk_io_ptr(const volatile void __iomem *);
 # include <linux/compiler-intel.h>
 #endif
 
-/* The Tensilica XCC compiler also defines __GNUC__. So we also will overwrite implementations
- * coming from above header files here.
- */
-#ifdef __XCC__
-# include <linux/compiler-tensilica.h>
-#endif
+
 
 /*
  * Generic compiler-dependent macros required for kernel
@@ -160,6 +155,13 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
 #endif /* __KERNEL__ */
 
 #endif /* __ASSEMBLY__ */
+
+/* The Tensilica XCC compiler also defines __GNUC__. So we also will overwrite implementations
+ * coming from above header files here. We want to define Xtensa #defines for asm files as well.
+ */
+#ifdef __XCC__
+# include <linux/compiler-tensilica.h>
+#endif
 
 #ifdef __KERNEL__
 /*

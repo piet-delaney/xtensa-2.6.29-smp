@@ -210,7 +210,11 @@ void platform_init(bp_tag_t *bootparams)
 	for (board = 0; board < 3; board++) {
 		bus_errors = 0;
 		bi = &board_info[board];
+#ifdef CONFIG_MMU
 		ptr = (char *) (bi->himem | 0xD8000000);	/* Uncached memory access */
+#else
+		ptr = (char *) (bi->himem);			/* No MMU, REMIND */
+#endif
 		saved_byte = *ptr;
 		saved_byte_total += saved_byte;
 		if (bus_errors)					/* Set if we got an exception */

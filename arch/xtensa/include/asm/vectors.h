@@ -9,7 +9,7 @@
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 2008 - 2010 Tensilica Inc.
+ * Copyright (C) 2008 - 2011 Tensilica Inc.
  *
  * Pete Delaney <piet@tensilica.com>
  * Marc Gauthier <marc@tensilica.com
@@ -20,17 +20,30 @@
 
 #include <variant/core.h>
 
+#if defined(CONFIG_MMU)
 #define VIRTUAL_MEMORY_ADDRESS  	0xD0000000    /* Will Become VECBASE */
 #define KERNELOFFSET            	0xD0003000    /* Image Virtual Start Address */
 
-#if defined(XCHAL_HAVE_PTP_MMU) && XCHAL_HAVE_PTP_MMU && XCHAL_HAVE_SPANNING_WAY  
+# if defined(XCHAL_HAVE_PTP_MMU) && XCHAL_HAVE_PTP_MMU && XCHAL_HAVE_SPANNING_WAY  
   /* MMU v3 */
   #define PHYSICAL_MEMORY_ADDRESS 	0x00000000
   #define LOAD_MEMORY_ADDRESS  	  	0x00003000
-#else
+# else
   #define PHYSICAL_MEMORY_ADDRESS      	0xD0000000
   #define LOAD_MEMORY_ADDRESS     	0xD0003000
-#endif
+# endif
+
+#else /* !defined(CONFIG_MMU) */
+
+  #define VIRTUAL_MEMORY_ADDRESS	0x00002000	/* VECBASE */
+  #define KERNELOFFSET			0x00003000	/* Location of the start of the kernel text, _start */
+  #define PHYSICAL_MEMORY_ADDRESS	0x00000000
+  #define LOAD_MEMORY_ADDRESS		0x00003000	/* Loaded just above possibly live vectors */
+
+#endif /* CONFIG_MMU */
+  
+  
+  
 
 #define XC_VADDR(offset)	(VIRTUAL_MEMORY_ADDRESS  + offset)
 #define XC_PADDR(offset)	(PHYSICAL_MEMORY_ADDRESS + offset)

@@ -19,6 +19,8 @@
  *  Copyright (C) 2002 - 2009 Tensilica Inc.
  */
 
+.begin schedule
+
 
 /*
  * size_t __xtensa_copy_user (void *dst, const void *src, size_t len);
@@ -319,3 +321,4 @@ l_fixup:
 	/* a2 still contains bytes not copied. */
 	retw
 
+.end schedule

@@ -35,6 +35,7 @@ int main(void)
 	DEFINE(PT_ICOUNTLEVEL, offsetof (struct pt_regs, icountlevel));
 	DEFINE(PT_SYSCALL, offsetof (struct pt_regs, syscall));
 	DEFINE(PT_SCOMPARE1, offsetof (struct pt_regs, scompare1));
+	DEFINE(PT_BR, offsetof (struct pt_regs, br));
 	DEFINE(PT_AREG, offsetof (struct pt_regs, areg[0]));
 	DEFINE(PT_AREG0, offsetof (struct pt_regs, areg[0]));
 	DEFINE(PT_AREG1, offsetof (struct pt_regs, areg[1]));
@@ -98,6 +99,7 @@ int main(void)
 	DEFINE(_CLONE_VM, CLONE_VM);
 	DEFINE(_CLONE_UNTRACED, CLONE_UNTRACED);
 	DEFINE(PG_ARCH_1, PG_arch_1);
+	DEFINE(PG_DCACHE_DIRTY, PG_arch_1);
 
 	return 0;
 }

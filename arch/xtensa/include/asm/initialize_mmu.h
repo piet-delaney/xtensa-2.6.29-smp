@@ -90,7 +90,7 @@
 #endif	/* XCHAL_HAVE_S32C1I && (XCHAL_HW_MIN_VERSION >= XTENSA_HWVERSION_RC_2008_0) */
 
 
-#if XCHAL_HAVE_PTP_MMU && XCHAL_HAVE_SPANNING_WAY  
+#if defined(CONFIG_MMU) && XCHAL_HAVE_PTP_MMU && XCHAL_HAVE_SPANNING_WAY  
 /* 
  * Have MMU v3  
  */
@@ -345,7 +345,7 @@
 	//
 	nop 					//  Done!
 
-#else /* !(XCHAL_HAVE_PTP_MMU && XCHAL_HAVE_SPANNING_WAY) */
+#else /* !(defined(CONFIG_MMU) && XCHAL_HAVE_PTP_MMU && XCHAL_HAVE_SPANNING_WAY) */
 
 	nop
 	nop
@@ -353,5 +353,5 @@
 	nop
 	nop
 
-#endif /* XCHAL_HAVE_PTP_MMU && XCHAL_HAVE_SPANNING_WAY */
+#endif /* defined(CONFIG_MMU) && XCHAL_HAVE_PTP_MMU && XCHAL_HAVE_SPANNING_WAY */
 #endif /* __ASSEMBLY__ */

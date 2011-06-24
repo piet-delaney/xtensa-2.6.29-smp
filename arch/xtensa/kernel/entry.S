@@ -7,14 +7,18 @@
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 2004 - 2009 by Tensilica Inc.
+ * Copyright (C) 2004 - 2011 by Tensilica Inc.
  *
  * Chris Zankel <chris@zankel.net>
  * Marc Gauthier <marc@tensilica.com>
  * Pete Delaney <piet@tensilica.com>
+ * Ross Morley <ross@tensilica.com>
  */
 
+.begin schedule
+
 #include <linux/linkage.h>
+#include <linux/compiler.h>
 #include <asm/asm-offsets.h>
 #include <asm/processor.h>
 #include <asm/thread_info.h>
@@ -292,6 +296,11 @@ _user_exception:
 	s32i	a2, a1, PT_SCOMPARE1
 #endif
 
+#if XCHAL_HAVE_BOOLEANS && defined(XTENSA_XCC_WORKAROUND_22651_ENABLED)
+	rsr     a2, BR
+	s32i    a2, a1, PT_BR
+#endif
+
 	/* Save optional registers. */
 
 	save_xtregs_opt a1 a2 a4 a5 a6 a7 PT_XTREGS_OPT
@@ -384,6 +393,10 @@ common_exception_return:
 	wsr	a2, SCOMPARE1
 #endif
 
+#if XCHAL_HAVE_BOOLEANS && defined(XTENSA_XCC_WORKAROUND_22651_ENABLED)
+	l32i    a2, a1, PT_BR
+	wsr     a2, BR
+#endif
 	wsr	a3, PS		/* disable interrupts */
 
 user_exception_exit:
@@ -707,6 +720,11 @@ _kernel_exception:
 	s32i	a2, a1, PT_SCOMPARE1
 #endif
 
+#if XCHAL_HAVE_BOOLEANS && defined(XTENSA_XCC_WORKAROUND_22651_ENABLED) 
+	rsr     a2, BR
+	s32i    a2, a1, PT_BR
+#endif
+
 	/* Save optional registers. */
 
 	save_xtregs_opt a1 a2 a4 a5 a6 a7 PT_XTREGS_OPT
@@ -773,8 +791,25 @@ _kernel_exception:
 	wsr	a2, SCOMPARE1
 #endif
 
+#if XCHAL_HAVE_BOOLEANS && defined(XTENSA_XCC_WORKAROUND_22651_ENABLED)
+	l32i    a2, a1, PT_BR
+	wsr     a2, BR
+#endif
+
+#ifdef XTENSA_XCC_WORKAROUND_19701_ENABLED
+	/*
+	 * WorkAround for xt-ld PR/bug: 19701
+	 *   Linker seems to make a mistake with relaxation for this form of relocation.
+	 */
+	movi	a0, 1f 					# Return address --> $a0
+	movi	a3, (0x40000000 - 0xC0000000)		# Calculate Return address and store in $a0
+	add     a0, a0, a3
+	l32i	a3, a1, PT_PS				# a3 = ptregs->ps [NOTE: Used below after retw]
+#else
 	l32i	a3, a1, PT_PS				# a3 = ptregs->ps [NOTE: Used below after retw]
 	movi	a0, 1f + (0x40000000 - 0xC0000000)	# Calculate Return address for "1f" and store in a0
+#endif
+
 	rsil	a2, XCHAL_EXCM_LEVEL	# FIXME: again, only do this if PS.INTLEVEL <= EXCM_LEVEL
 	retw				# rotate back by 4 registers, possibly with underflow
 					# Back out our _entry Frame above...
@@ -1032,8 +1067,88 @@ ENTRY(unrecoverable_exception)
 
 /* -------------------------- FAST EXCEPTION HANDLERS ----------------------- */
 
+#define USE_NEW_ALLOC_CODE
+#ifdef  USE_NEW_ALLOC_CODE
+
+#define XCHAL_PS_OWB_BITS               4	/* From /Xtensa/OS/include/xtensa/config/core.h */
+#define XCHAL_PS_OWB_SHIFT              8
+
 /*
- * Fast-handler for alloca exceptions
+ * Fast-handler for alloca exceptions - NEW VERSION
+ *
+ *  The ALLOCA handler is entered when user code executes the MOVSP
+ *  instruction and the caller's frame is not in the register file.
+ *
+ * This algorithm was taken from the Ross Morley's RTOS Porting Layer:
+ *
+ *    /home/ross/rtos/porting/XtensaRTOS-PortingLayer-20090507/xtensa_vectors.S
+ *
+ * It leverages the existing window spill/fill routines and their support for double
+ * exceptions. The 'movsp' instruction will only cause an exception if the next
+ * window needs to be loaded. In fact this ALLOCA exception may be replaced at some point
+ * by changing the hardware to do a underflow exception of the proper size instead.
+ *
+ * This algorithm simply backs out the register changes started by the user
+ * excpetion handler, makes it appear that we have started a window underflow
+ * by rotating the window back and then setting the old window base (OWB) in
+ * the 'ps' register with the rolled back window base. The 'movsp' instruction
+ * will be re-executed and this time since the next window frames is in the
+ * active AR registers it won't cause an exception.
+ *
+ * If the WindowUnderflow code gets a TLB miss the page will get mapped
+ * the the partial windeowUnderflow will be handeled in the double exception
+ * handler.
+ *
+ * Entry condition:
+ *
+ *   a0:	trashed, original value saved on stack (PT_AREG0)
+ *   a1:	a1
+ *   a2:	new stack pointer, original in DEPC
+ *   a3:	a3
+ *   depc:	a2, original value saved on stack (PT_DEPC)
+ *   excsave_1:	dispatch table
+ *
+ *   PT_DEPC >= VALID_DOUBLE_EXCEPTION_ADDRESS: double exception, DEPC
+ *	     <  VALID_DOUBLE_EXCEPTION_ADDRESS: regular exception
+ */
+ENTRY(fast_alloca)
+	rsr     a0, WINDOWBASE  	/* Save WINDOWBASE before rotw changes it */
+					/* Orig a2 still in DEPC, WINDOWBASE will soon be in a6 */
+	rotw    -1 			/* registers a0, a1, a2, a3 are now in ... */
+					/* ...       a4, a5, a6, a7 ... */
+					/* ... a0 thru a3 are now scratch registers that ... */
+					/* ... are about to be underflowed into */
+	rsr     a2, PS
+	extui   a3, a2, XCHAL_PS_OWB_SHIFT, XCHAL_PS_OWB_BITS
+					/* a3 now has the Old Window Base bit from $ps in LSBs */
+
+					/* We are going to use two XORs to clear out the ...
+					 * current OWB while coping the current window base
+					 * to the ps OWB bits. Note: a ^ a == 0 and commutes
+					 * so a ^ (a ^ b) == b
+					 */
+	xor     a3, a3, a4      	/* bits changed from old to current windowbase */
+	l32i	a4, a6, PT_AREG0	/* restore $a0 (now is a4) */
+	l32i    a1, a6, PT_DEPC		/* a1 = saved DEPC */
+	rsr     a6, DEPC   		/* restore original a2 (now in a6) */
+	wsr	a1, DEPC		/* restore DEPC from saved value from PT_DEPC */
+	slli    a3, a3, XCHAL_PS_OWB_SHIFT
+	xor     a2, a2, a3      	/* flip changed bits in old window base */
+	wsr     a2, PS          	/* update PS.OWB to new window base */
+	rsync
+
+	_bbci.l a4, 31, 4f
+	rotw    -1              	/* original a0 goes to a8 */
+	_bbci.l a8, 30, 8f
+	 rotw    -1
+	j	_WindowUnderflow12
+8:	j	_WindowUnderflow8
+4:	j	_WindowUnderflow4
+
+#else /* !USE_NEW_ALLOC_CODE */
+
+/*
+ * Fast-handler for alloca exceptions - OLD VERSION (Might still be usefull for fixup issues)
  *
  *  The ALLOCA handler is entered when user code executes the MOVSP
  *  instruction and the caller's frame is not in the register file.
@@ -1206,6 +1321,8 @@ unhandled_double:
 	l32i	a0, a2, PT_AREG0
 	l32i	a2, a2, PT_AREG2
 	rfe
+
+#endif /* USE_NEW_ALLOC_CODE */
 
 
 /*
@@ -2284,3 +2401,4 @@ ENTRY(ret_from_fork)
 2:
 	j	common_exception_return	/* (rsync occurs after this label) */
 
+.end schedule

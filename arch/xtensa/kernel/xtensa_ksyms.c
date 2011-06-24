@@ -40,6 +40,16 @@ EXPORT_SYMBOL(memset);
 EXPORT_SYMBOL(memcpy);
 EXPORT_SYMBOL(memmove);
 
+/*
+ * Asm functions used by OProfile
+ */
+extern int common_exception_return;
+extern void _spill_registers(void);	 /* Static Inline that calls _spill_registers() */
+
+EXPORT_SYMBOL(spill_registers);
+EXPORT_SYMBOL(kernel_text_address);
+EXPORT_SYMBOL(common_exception_return);
+
 EXPORT_SYMBOL(kernel_thread);
 
 /*

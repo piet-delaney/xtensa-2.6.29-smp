@@ -11,6 +11,8 @@
 
 #include <asm/vectors.h>
 
+.begin schedule
+
 #if 0
 #undef XCHAL_HAVE_LOOPS		/* Toggle for full coverage testing */
 #endif
@@ -310,6 +312,8 @@ memcpy:
 	l8ui	a6, a3,  0
 	s8i	a6, a5,  0
 	retw
+
+	.end schedule
 
 /*
  * Local Variables:

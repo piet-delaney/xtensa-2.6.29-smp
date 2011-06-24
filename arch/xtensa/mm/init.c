@@ -25,15 +25,21 @@
 #include <linux/nodemask.h>
 #include <linux/mm.h>
 #include <linux/slab.h>
+#include <linux/compiler.h>
 
 #include <asm/bootparam.h>
 #include <asm/page.h>
 #include <asm/setup.h>
 
-#ifdef __XCC__
+#ifdef XTENSA_XCC_WORKAROUND_22415_ENABLED
 /*
  * Functions that gcc optimizes away but has extern statements for.
- * XCC doesn't optimize them away via the GCC frontend; sigh.
+ * XCC doesn't optimize them away via the GCC frontend. 
+ *
+ * REMIND:
+ *    Add workarounds done with CONFIG_CC_OPTIMIZE_FOR_DEBUGGING.
+ * 
+ * See Problem Report: 22415
  */
 void __attribute__ ((weak)) __get_user_bad(void) 			{ panic(__func__); }
 void __attribute__ ((weak)) __put_user_bad(void) 			{ panic(__func__); }
@@ -49,6 +55,8 @@ int __attribute__ ((weak)) cookie_v4_init_sequence(void)		{ panic(__func__); }
 
 int __attribute__ ((weak)) cookie_v6_init_sequence(void)                { panic(__func__); }
 int __attribute__ ((weak)) ext2_xip_file_operations(void)               { panic(__func__); }
+int __attribute__ ((weak)) ring_buffer_page_too_big(void)		{ panic(__func__); }
+void __attribute__ ((weak)) __ftrace_bad_type(void)			{ panic(__func__); }
 #endif
 
 /* References to section boundaries */
@@ -294,7 +302,7 @@ void free_initrd_mem(unsigned long start, unsigned long end)
  * breakpoints in init code that would normally
  * be made free.
  */
-volatile int  skip_free_of_initmem = 0;
+volatile int  skip_free_of_initmem = 1;
 
 void free_initmem(void)
 {

@@ -532,6 +532,30 @@ more details, with real examples.
 	In this example for a specific GCC version the build will error out explaining
 	to the user why it stops.
 
+    xcc-version
+    xcc-ifversion
+    xcc-fullversion
+	Support functions similar to above GCC version functions but for Tensilica's XCC compiler.
+	Usage is virtually identical to the GCC versions except that XCC currently has no Patch Levels;
+	so 'xcc-fullversion' returns a similar canonical 5-digit version number as 'xcc-version':
+
+		2-Digit MAJOR 		1-Digit Interim		2-Digit Minor
+
+	So for xt-xcc version 9.0.2:
+				xcc-version     => 09002
+				xcc-fullversion => 09002
+
+	Note that like gcc, 'xcc-ifversion' uses xcc-version and not xcc-fullversion.
+
+	Example:
+		lib/Makefile
+			XTENSA_ALT_EXTRA_CFLAGS := $(strip $(subst ",,$(CONFIG_XTENSA_ALT_EXTRA_CFLAGS)))#")))
+			CFLAGS_vsprintf.o += $(call xcc-ifversion, -lt, 99003,  $(XTENSA_ALT_EXTRA_CFLAGS))
+
+		In this example vsprintf.c will be compiled with alternate extra cflags defined in the
+		the kernel .config file for XCC major versions less than 99 (all current versions).
+
+
     cc-cross-prefix
 	cc-cross-prefix is used to check if there exists a $(CC) in path with
 	one of the listed prefixes. The first prefix where there exist a

@@ -50,7 +50,8 @@ SECTIONS
 	}
 
 
-	/*      0xD0003000          0x00003000							                 */
+	/*      0xD0003000          0x00003000                                                Without MMU        */
+	/*      0xD0003000          0x00003000						      With V3 MMU        */
 	.image KERNELOFFSET: AT (LOAD_MEMORY_ADDRESS)	/* KERNELOFFSET: - defined in core.h; default 0xD0003000 */
 	{
 		_image_start = .;

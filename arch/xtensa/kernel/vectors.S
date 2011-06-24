@@ -17,6 +17,10 @@
  * Pete Delaney <piet@@tensilica.com>
  */
 
+#if 0
+.begin schedule
+#endif
+
 /*
  * We use a two-level table approach. The user and kernel exception vectors
  * use a first-level dispatch table to dispatch the exception to a registered
@@ -796,4 +800,6 @@ _WindowUnderflow12:
 
 	.text
 
-
+#if 0
+.end schedule
+#endif

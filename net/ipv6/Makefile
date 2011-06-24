@@ -2,6 +2,35 @@
 # Makefile for the Linux TCP/IP (INET6) layer.
 #
 
+ifdef CONFIG_USE_XTENSA_XCC_COMPILER
+#
+# WORKAROUND for XCC Optimization Bugs when compiling -O3:
+# ========================================================
+#
+# CONFIG_XTENSA_ALT_EXTRA_CFLAGS can be set -O2 when  CONFIG_XTENSA_EXTRA_CFLAGS
+# is set to -O3 to allow most of the kernel code to be compiled -O3 and a few
+# functions like those below to be compiled -O2 till the XCC bugs are resolved.
+#
+# tcp_ipv6.c:
+# -----------
+#       ### Assertion failure at line 562 of /home/pdelaney/work/cottonwood_1/p4root/Xtensa/Software/xcc/be/opt/opt_find.cxx:
+#	### Compiler Error in file /export2/src/$ARCH/$PLATFORM_src.25-Mar-2011.xcc/Linux_*/linux-29/net/ipv6/tcp_ipv6.c
+#	### Unknown DEFREP kind
+#	Signal: Aborted in Global Optimization -- New PRE: Expr hoisting. phase.
+#	Error: Signal Aborted in phase Global Optimization -- New PRE: Expr hoisting. -- processing aborted
+#	Bug: 22626
+#
+XTENSA_ALT_EXTRA_CFLAGS := $(strip $(subst ",,$(CONFIG_XTENSA_ALT_EXTRA_CFLAGS)))#")))
+
+# EXTRA_CFLAGS +=  $(XTENSA_ALT_EXTRA_CFLAGS)
+# CFLAGS_addrlabel.o = -save-temps
+
+# XTENSA_XCC_WORKAROUND_22626_ENABLED still required as of xcc-9.0.2 (09002)
+CFLAGS_tcp_ipv6.o = $(call xcc-ifversion, -lt, 99003,  $(XTENSA_ALT_EXTRA_CFLAGS))
+
+endif
+
+
 obj-$(CONFIG_IPV6) += ipv6.o
 
 ipv6-objs :=	af_inet6.o anycast.o ip6_output.o ip6_input.o addrconf.o \

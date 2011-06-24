@@ -6,7 +6,7 @@
  * for more details.
  *
  * Copyright (C) 1995  Linus Torvalds
- * Copyright (C) 2001 - 2009  Tensilica Inc.
+ * Copyright (C) 2001 - 2011  Tensilica Inc.
  *
  * Chris Zankel	<chris@zankel.net>
  * Joe Taylor	<joe@tensilica.com>
@@ -59,9 +59,6 @@ extern struct fd_ops no_fd_ops;
 struct fd_ops *fd_ops;
 #endif
 
-extern struct rtc_ops no_rtc_ops;
-struct rtc_ops *rtc_ops;
-
 #ifdef CONFIG_BLK_DEV_INITRD
 extern void *initrd_start;
 extern void *initrd_end;
@@ -79,10 +76,17 @@ extern unsigned long loops_per_jiffy;
 static char __initdata command_line[COMMAND_LINE_SIZE];
 
 #ifdef CONFIG_CMDLINE_BOOL
-static  __initdata char default_command_line[COMMAND_LINE_SIZE] __initdata = CONFIG_CMDLINE;
+/*
+ * REMIND: What non-__initdata function is refering to this?
+ */
+static  /* __initdata */ char default_command_line[COMMAND_LINE_SIZE] __initdata = CONFIG_CMDLINE;
 #endif
 
-sysmem_info_t __initdata sysmem;
+/* 
+ * REMIND:
+ * Why does __invalidate_dcache_all() appear to reference sysmem?
+ */
+sysmem_info_t /* __initdata */ sysmem;
 
 #ifdef CONFIG_BLK_DEV_INITRD
 int initrd_is_mapped;
@@ -107,18 +111,26 @@ extern void zones_init(void);
  * When booting via xt-ocd the bootparams are up at the reset vector
  * and don't need to be mapped to a virtual address. When comming from
  * U-Boot the addresses are physical and need to be mapped to virtual.
+ *
+ * REMIND: Cleanup U-boot fix for V3 MMU.
  */
-static int map_required = 0;
 
+#if  XCHAL_HAVE_S32C1I && XCHAL_HAVE_PTP_MMU && XCHAL_HAVE_SPANNING_WAY
+/*
+ * V3 MMU - Args from U-Boot are physical addresses;
+ *          convert to KSEG virtual addresses.
+ */
 #define PHYS_TO_VIRT(pa, va)	{					\
-	if (map_required) {						\
-		(va) = (typeof(va)) (((int) pa) | 0XD0000000);		\
-		printk("%s: va:%p = pa:%p | 0XD0000000\n", __func__,	\
-			    va,     pa);				\
-	} else {							\
-		(va) = (pa);						\
-	}								\
-}									\
+	(va) = (typeof(va)) (((int) pa) | 0XD0000000);			\
+									\
+	printk("%s: va:%p = pa:%p | 0XD0000000\n", __func__,		\
+		    va,     pa);					\
+}
+#else
+#define PHYS_TO_VIRT(pa, va) {						\
+		 (va) = (pa);                                           \
+	}
+#endif									
 
 typedef struct tagtable {
 	u32 tag;
@@ -152,6 +164,7 @@ static int __init parse_tag_mem(const bp_tag_t *tag)
 		       (unsigned long)mi->end - (unsigned long)mi->start);
 		return -EINVAL;
 	}
+
 	sysmem.bank[sysmem.nr_banks].type  = mi->type;
 	sysmem.bank[sysmem.nr_banks].start = PAGE_ALIGN(mi->start);
 	sysmem.bank[sysmem.nr_banks].end   = mi->end & PAGE_MASK;
@@ -192,7 +205,7 @@ static int __init_refok parse_tag_cmdline(const bp_tag_t *tag)
 	char *phys_command_line = (char*)(tag->data);
 	char *virt_command_line;
 
-#if 0
+#if 0   /* REMIND: Why don't we have to convert PA to Linux VA? */
 	PHYS_TO_VIRT(phys_command_line, virt_command_line);
 #else
 	virt_command_line = phys_command_line;
@@ -219,10 +232,11 @@ static int __init parse_bootparam(const bp_tag_t *phys_tag)
 	extern tagtable_t __tagtable_begin, __tagtable_end;
 	tagtable_t *t;
 
+#if 0
 	printk("%s(phys_tag:%p): \n",  __func__, phys_tag);
+#endif
 
 	if ( ((unsigned int) phys_tag) < ((unsigned int) 0XF0000000)) {
-		map_required = 1;
 		PHYS_TO_VIRT(phys_tag, tag);
 	} else {
 		tag = ( bp_tag_t *) phys_tag;
@@ -260,6 +274,11 @@ static int __init parse_bootparam(const bp_tag_t *phys_tag)
  */
 void __init_refok init_arch(bp_tag_t *bp_start)
 {
+
+#ifdef CONFIG_DEBUG_KERNEL
+	default_message_loglevel = 7;
+	default_console_loglevel = 7;
+#endif	
 
 #if 0
 #ifdef CONFIG_BLK_DEV_INITRD
@@ -530,8 +549,10 @@ void __init setup_arch(char **cmdline_p)
 	smp_init_cpus();
 #endif
 
-	paging_init();
+	/* Set up zones before page_table fixed mappings */
 	zones_init();
+
+	paging_init();
 
 #ifdef CONFIG_VT
 # if defined(CONFIG_VGA_CONSOLE)
@@ -639,10 +660,10 @@ c_show(struct seq_file *f, void *slot)
 		     *(int*) slot,
 		     XCHAL_BUILD_UNIQUE_ID,
 		     XCHAL_HAVE_BE ?  "big" : "little",
-		     CCOUNT_PER_JIFFY/(1000000/HZ),
-		     (CCOUNT_PER_JIFFY/(10000/HZ)) % 100,
+		     (unsigned long) CCOUNT_PER_JIFFY/(1000000/HZ),
+		     (unsigned long) (CCOUNT_PER_JIFFY/(10000/HZ)) % 100,
 		     loops_per_jiffy/(500000/HZ),
-		     (loops_per_jiffy/(5000/HZ)) % 100);
+		     (unsigned long) (loops_per_jiffy/(5000/HZ)) % 100);
 
 	seq_printf(f,"flags\t\t: "
 #if XCHAL_HAVE_NMI

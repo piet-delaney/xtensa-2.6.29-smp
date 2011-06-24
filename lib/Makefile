@@ -2,6 +2,56 @@
 # Makefile for some libs needed in the kernel.
 #
 
+ifdef CONFIG_USE_XTENSA_XCC_COMPILER
+#
+# WORKAROUND for XCC Optimization Bugs when compiling -O3:
+# =========================================================
+#
+# CONFIG_XTENSA_ALT_EXTRA_CFLAGS can be set -O2 when  CONFIG_XTENSA_EXTRA_CFLAGS
+# is set to -O3 to allow most of the kernel code to be compiled -O3 and a few
+# functions like those below to be compiled -O2 till the XCC bugs are resolved.
+#
+# PROBLEMS:
+# --------
+#
+#  1. vsprintf.o:
+#	sprintf(name, "%d", irq) fails here:
+#		Line: 935                         end[-1] = '\0';
+#
+#	This 'overoptimization' can be avoided eventually by XCC supporting
+#	the new:
+#
+#		-fno-strict-overflow
+#
+#	option available in recient GCC compilers.
+#
+#	As a workaround we can limit the optimization level to -O2 via
+#	XTENSA_ALT_EXTRA_CFLAGS declared in the kernel .config file.
+#
+#       See Problem Report: 22630
+#
+#
+#  2. libcrc32c.c:
+#	 error: a member of a structure or union cannot have a variably modified type
+#	 See libcrc32c.c for current workaround.
+#
+#	 See Problem Report: 22663
+#
+#
+# EXTRA_CFLAGS += -O2
+# CFLAGS_vsprintf.o = -O0
+# CFLAGS_vsprintf.o = -save-temps
+# FLAGS_libcrc32c.o = -save-temps
+
+XTENSA_ALT_EXTRA_CFLAGS := $(strip $(subst ",,$(CONFIG_XTENSA_ALT_EXTRA_CFLAGS)))#")))
+
+# XTENSA_XCC_WORKAROUND_22630_ENABLED - still unresolved as of xcc-9.0.2 (09002)
+# CFLAGS_vsprintf.o += $(call xcc-ifversion, -lt, 99003,  $(XTENSA_ALT_EXTRA_CFLAGS))
+CFLAGS_vsprintf.o += $(call xcc-ifversion, -lt, 99003,  -OPT:fold_ag=0)
+
+endif
+
+
 ifdef CONFIG_FUNCTION_TRACER
 ORIG_CFLAGS := $(KBUILD_CFLAGS)
 KBUILD_CFLAGS = $(subst -pg,,$(ORIG_CFLAGS))

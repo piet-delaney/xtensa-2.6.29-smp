@@ -17,6 +17,7 @@
 #include <linux/if_addrlabel.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
+#include <linux/compiler.h>
 
 #if 0
 #define ADDRLABEL(x...) printk(x)
@@ -78,21 +79,23 @@ struct net *ip6addrlbl_net(const struct ip6addrlbl_entry *lbl)
 
 #define IPV6_ADDR_LABEL_DEFAULT	0xffffffffUL
 
-#ifdef CONFIG_USE_XTENSA_XCC_COMPILER
+#if 1 && defined(XTENSA_XCC_WORKAROUND_22679_ENABLED)
 
 /*
+ * Workaround for Tensilica Problem Report (PR) 22679:
+ *
  * XCC seems to have a problem where the ipaddress is being put into
  * the prefix instead of the address of the ipaddress. Ex:
  *
  *	(gdb) print ip6addrlbl_init_table
  *		$3 =   {{
  *		    prefix = 0xd0d4b994, 	// Correct, the address of in6addr_any
- *		    prefixlen = 0x0,
+ *		    prefixlen = 0x0, 
  *		    label = 0x1
  *		  },
  *		  {
  *		    prefix = 0xfc, 		//  Wrong, should be & (struct in6_addr) {{{ 0xfc }}}
- *		    prefixlen = 0x0,
+ *		    prefixlen = 0x0, 
  *		    label = 0x0
  *		  },
  *                ...
