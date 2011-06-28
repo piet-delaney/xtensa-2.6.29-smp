@@ -81,6 +81,8 @@ set var $debug_exceptions = 0
 set var $debug_page_migration = 0
 set var $mx = 0
 set var $debug_iss_simulation = 1
+set var $debug_iss_trace_enabled = 1
+set var $debug_iss_initial_trace_level = 0
 set var $debug_hw_breakpoints_supported = 0
 set var $use_mmu = 1
 
@@ -153,18 +155,36 @@ else
 		echo "add-symbol-file vmlinux 0x00001000\n"
 		      add-symbol-file vmlinux 0x00001000
 	end
+
 	file arch/xtensa/boot/Image.elf
 	if ($debug_iss_simulation != 0 )
-	  # Simulator can used up to 128MB [134,217,728 Bytes]
-	  # Use 'xt-run --help' to see args forwared by 'target sim' gdb command.
-	  echo "target sim --turbo --memlimit=128\n"
-	        target sim --turbo --memlimit=128
+	    # Simulator can used up to 128MB [134,217,728 Bytes]
+	    # Use 'xt-run --help' to see args forwared by 'target sim' gdb command.
+
+	    if ($debug_iss_trace_enabled)
+#	  	echo 'target sim --turbo --cc_none --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out" \n'
+#	              target sim --turbo --cc_none --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out"
+
+#	  	echo 'target sim --turbo            --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out" \n'
+#	              target sim --turbo            --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out"
+
+		echo 'target sim                    --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out" \n'
+	              target sim                    --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out"
+
+		echo "\n"
+		echo "Change iss trace level later, when you are near a problem, with:\n"
+		echo "    iss client trace level 3"
+	    else
+		 echo "target sim --turbo --memlimit=128\n"
+		       target sim --turbo --memlimit=128
+	    end
+
 	else 
 
-	  echo "target remote localhost:60000  &spill_location_0\n"
-#	        target remote localhost:40000  &spill_location_0
-	        target remote localhost:60000  &spill_location_0
-#	        target remote  tuscana2:20000  &spill_location_0
+	    echo "target remote localhost:60000  &spill_location_0\n"
+#	          target remote localhost:40000  &spill_location_0
+	          target remote localhost:60000  &spill_location_0
+#	          target remote  tuscana2:20000  &spill_location_0
         end
 end
 
@@ -253,6 +273,7 @@ def set_breakpoints
 		break free_hot_cold_page
 		break free_pages_bulk
 	end
+
 
 	if $debug_pmd_code
 		echo "\n"
@@ -350,7 +371,12 @@ def set_breakpoints
 		echo "\n"
 		echo "Enabling Tracing in do_page_fault\n"
 		set page_fault_debug = 1
+
 		break do_page_fault
+		set $do_page_fault_bpnum = $bpnum
+
+		break do_group_exit
+		set $do_group_exit_bpnum = $bpnum
 	end
 
 	if $debug_page_faults
@@ -591,11 +617,11 @@ def set_breakpoints
 		echo "\n"
 		echo "Setting Module Breakpoints\n"
 		break load_module
-		set var $load_module = $bpnum
+		set var $load_module_bpnum = $bpnum
 		if $doing_commands
 			echo "Type 'set_breakpoints' to set Module Breakpoints\n"
 		else
-		    commands $load_module
+		    commands $load_module_bpnum
 			break sys_init_module
 			break apply_relocate_add
 			break do_one_initcall
@@ -749,6 +775,32 @@ def set_breakpoints
 	echo "\n"
 end
 
+def set_commands
+        echo "\n"
+        echo "================================ set_commands: Beginning ==================================\n"
+
+	if $do_page_fault_bpnum
+		echo "Enableing commands for do_page_fault Breakpoint\n"
+		commands $do_page_fault_bpnum
+			echo c 85
+		end
+	end
+
+	if $do_group_exit_bpnum
+		echo "Enabling commands for do_group_exit Breakpoint\n"
+		commands $do_page_fault_bpnum
+			bt
+			print $windowbase
+			print $windowstart
+		end
+	end
+
+        echo "================================ set_commands: Completed ==================================\n"
+        echo "\n"
+end
+
+
+
 
 def source_gdb_macros
     #
@@ -792,7 +844,8 @@ end
 set var $_startup = $bpnum
 commands $_startup
     set var $doing_commands = 1
-    set_breakpoints	
+    set_breakpoints
+    echo type "set_commands"
     source_gdb_macros
     set_kernel_flags    
     delete $_startup

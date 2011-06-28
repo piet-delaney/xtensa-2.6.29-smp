@@ -23,8 +23,11 @@
 #include <asm/pgalloc.h>
 #include <linux/delay.h>
 
-// #undef DEBUG_PAGE_FAULT
-#define DEBUG_PAGE_FAULT
+#ifdef CONFIG_DEBUG_KERNEL
+# define DEBUG_PAGE_FAULT
+#else
+# undef DEBUG_PAGE_FAULT
+#endif
 
 #ifdef DEBUG_PAGE_FAULT
 /*
@@ -33,6 +36,7 @@
  *     CONFIG_CMDLINE="console=ttyS0 ... coredump_filter=0xff page_fault_debug"
  */
 int page_fault_debug = 0;
+int page_fault_number = 0;
 static int page_fault_printks = 0;
 
 static int __init page_fault_debug_setup(char *buf)
@@ -43,11 +47,14 @@ static int __init page_fault_debug_setup(char *buf)
 
 early_param("page_fault_debug", page_fault_debug_setup);
 
-#define dprintf(fmt, args...) ({                        \
-        if (unlikely(page_fault_debug))                 \
-                printk(KERN_INFO                        \
-                        "PageFault::%s " fmt,           \
-                        __func__, ## args);             \
+#define dprintf(fmt, args...) ({                        		\
+	unsigned long ccount = get_ccount();				\
+									\
+        if (unlikely(page_fault_debug))                 		\
+                printk(KERN_INFO                        		\
+                        "PageFault[%d], Ccount:%ld, %s(): " fmt,       	\
+			page_fault_number, ccount,			\
+                        __func__, ## args);             		\
 })
 
 #else
@@ -81,6 +88,10 @@ void do_page_fault(struct pt_regs *regs)
 	int fault;
 
 	info.si_code = SEGV_MAPERR;
+
+#ifdef DEBUG_PAGE_FAULT
+	page_fault_number++;
+#endif	
 
 #if 0 && defined(CONFIG_HIGHMEM) && defined(CACHE_ALIASING_POSSIBLE)
 	__flush_invalidate_dcache_all();
