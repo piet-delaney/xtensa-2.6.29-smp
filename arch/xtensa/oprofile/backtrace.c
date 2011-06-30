@@ -21,7 +21,8 @@ struct frame_start {
 
 void xtensa_backtrace(struct pt_regs * const regs_in, unsigned int depth)
 {
-	unsigned long a0, a1, pc;
+	unsigned long a0, a1;
+	unsigned long pc = regs_in->pc;
 	unsigned long *psp;
 	struct pt_regs * regs = regs_in;
 	/* Address of common_exception_return, used to check the
@@ -42,7 +43,7 @@ void xtensa_backtrace(struct pt_regs * const regs_in, unsigned int depth)
 		/* Read the stack frames one by one and create the PC
 		 * from the a0 and a1 registers saved there.  */
 		while (a1 > sp_start && a1 < sp_end && depth--) {
-			pc = MAKE_PC_FROM_RA(a0, a1);
+			pc = MAKE_PC_FROM_RA(a0, pc);
 
 			/* Add the PC to the trace.  */
 			if (kernel_text_address(pc))
@@ -50,8 +51,14 @@ void xtensa_backtrace(struct pt_regs * const regs_in, unsigned int depth)
 
 			if (pc == (unsigned long) & common_exception_return) {
 				regs = (struct pt_regs *)a1;
-				if (user_mode (regs))
+				if (user_mode (regs)) {
+					pc = regs->pc;
+					if (pc != 0 && pc <= TASK_SIZE)
+						oprofile_add_trace(pc);
+					else
+						return;
 					goto USER_LAND;
+				}
 				a0 = regs->areg[0];
 				a1 = regs->areg[1];
 				continue;
@@ -78,7 +85,7 @@ USER_LAND:
 
 		a0 = regs->areg[0];
 		a1 = regs->areg[1];
-		pc = MAKE_PC_FROM_RA(a0, a1);
+		pc = MAKE_PC_FROM_RA(a0, pc);
 
 		/* First add the current PC to the trace.  */
 		if (pc != 0 && pc <= TASK_SIZE)
@@ -107,7 +114,7 @@ USER_LAND:
 				a0 = regs->areg[index * 4];
 				a1 = regs->areg[index * 4 + 1];
 				/* Get the PC from a0 and a1.  */
-				pc = MAKE_PC_FROM_RA (a0, a1);
+				pc = MAKE_PC_FROM_RA (a0, pc);
 
 				/* Add the PC to the trace.  */
 				if (pc != 0 && pc <= TASK_SIZE)
@@ -140,7 +147,7 @@ USER_LAND:
 
 				a0 = frame_start.a0;
 				a1 = frame_start.a1;
-				pc = MAKE_PC_FROM_RA(a0, a1);
+				pc = MAKE_PC_FROM_RA(a0, pc);
 
 				if (pc != 0 && pc <= TASK_SIZE)
 					oprofile_add_trace(pc);
