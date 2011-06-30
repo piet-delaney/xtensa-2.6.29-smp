@@ -58,7 +58,7 @@ early_param("page_fault_debug", page_fault_debug_setup);
 })
 
 #else
-##define dprintf(fmt, args...)
+#define dprintf(fmt, args...)
 #endif
 
 
