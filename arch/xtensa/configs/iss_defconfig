@@ -70,12 +70,17 @@ CONFIG_XTENSA_PLATFORM_ISS=y
 CONFIG_XTENSA_CPU_CLOCK=10000
 # CONFIG_GENERIC_CALIBRATE_DELAY is not set
 CONFIG_CMDLINE_BOOL=y
-CONFIG_CMDLINE="console=ttyS0,38400 eth0=tuntap,,tap0 ip=192.168.168.5:192.168.168.1 root=nfs nfsroot=192.168.168.1:/opt/montavista/pro/devkit/xtensa/linux_be/target"
+CONFIG_CMDLINE="console=ttyS0,38400 root=/dev/simdisk0"
 CONFIG_SERIAL_CONSOLE=y
 CONFIG_XTENSA_ISS_NETWORK=y
+CONFIG_BLK_DEV_SIMDISK_COUNT=2
+CONFIG_SIMDISK0_FILENAME="abc"
+CONFIG_SIMDISK1_FILENAME="def"
 
 #
 # Bus options
+# CONFIG_PCI is not set
+# CONFIG_ARCH_SUPPORTS_MSI is not set
 #
 
 #
@@ -109,6 +114,7 @@ CONFIG_BINFMT_ELF=y
 CONFIG_PREVENT_FIRMWARE_BUILD=y
 # CONFIG_FW_LOADER is not set
 # CONFIG_DEBUG_DRIVER is not set
+CONFIG_BLK_DEV=y
 
 #
 # Memory Technology Devices (MTD)
@@ -401,7 +407,7 @@ CONFIG_DUMMY_CONSOLE=y
 #
 # File systems
 #
-# CONFIG_EXT2_FS is not set
+CONFIG_EXT2_FS=y
 # CONFIG_EXT3_FS is not set
 # CONFIG_JBD is not set
 # CONFIG_REISERFS_FS is not set
