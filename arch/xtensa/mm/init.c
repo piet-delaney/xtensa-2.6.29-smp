@@ -31,13 +31,16 @@
 #include <asm/page.h>
 #include <asm/setup.h>
 
-#ifdef XTENSA_XCC_WORKAROUND_22415_ENABLED
+#if defined(__XCC__) || defined(XTENSA_XCC_WORKAROUND_22415_ENABLED)
 /*
  * Functions that gcc optimizes away but has extern statements for.
  * XCC doesn't optimize them away via the GCC frontend. 
  *
- * REMIND:
- *    Add workarounds done with CONFIG_CC_OPTIMIZE_FOR_DEBUGGING.
+ * REMIND/FIXME:
+ *    1. Add workarounds done with CONFIG_CC_OPTIMIZE_FOR_DEBUGGING.
+ *
+ *    2. XTENSA_XCC_WORKAROUND_22415_ENABLED should have been defined
+ *       with using __XCC__.
  * 
  * See Problem Report: 22415
  */
