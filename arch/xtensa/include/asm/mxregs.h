@@ -5,13 +5,25 @@
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 2008 - 2009 Tensilica Inc.
+ * Copyright (C) 2008 - 2011 Tensilica Inc.
  */
 
 #ifndef _XTENSA_MXREGS_H
 #define _XTENSA_MXREGS_H
 
 #ifdef CONFIG_ARCH_HAS_SMP
+
+#include <variant/core.h>
+
+/*
+ *  For SMP we assume availability of the "external registers" option
+ *  (which gives us the WER and RER instructions, used further below).
+ *  Fail clearly if SMP attempted on a processor without such support.
+ */
+# if !defined(XCHAL_HAVE_EXTERN_REGS) || !XCHAL_HAVE_EXTERN_REGS
+#  error "For Xtensa processors, SMP requires the external registers option"
+# endif
+
 
 /*
  * RER/WER at, as	Read/write external register

@@ -59,6 +59,7 @@ CONFIG_MMU=y
 # CONFIG_PREEMPT is not set
 # CONFIG_MATH_EMULATION is not set
 # CONFIG_HIGHMEM is not set
+# CONFIG_ARCH_HAS_SMP is not set
 
 #
 # Platform options
