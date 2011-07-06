@@ -138,7 +138,7 @@ typedef enum {
 	ring3 = 3
 } ring_t;
 
-typedef union  { 
+typedef union  {
 	unsigned long pte;
 	struct {				/* Little Endian Form */
 		unsigned int x:1;		/* Bit 0: executable */
@@ -154,7 +154,58 @@ typedef union  {
 	} present;
 } pte_t;					/* page table entry */
 
-typedef struct { unsigned long pgd; } pgd_t;	/* PGD table entry */
+typedef struct {
+	pte_t	pte[1024];		 	/* A PTE Table */
+} pte_table_t;
+
+typedef pte_t pte_dir_t[1024];
+
+typedef union {
+	unsigned long pgd;
+	pte_table_t *page_table;		/* Pointer to a page of pte entries */
+	struct {				/* Little Endian Form */
+		unsigned int _unused:12;	/* Bit 1...11: <Not Used> */
+		unsigned int vpn:20;		/* Bits 12...31: Virtual Page Number */
+	} bit_fields;
+} pgd_t;					/* PGD table entry */
+
+
+typedef struct {
+	pte_t	pmd[1024];			/* A PMD Table, which was folded from pgd entries */
+} pmd_table_t;
+
+
+typedef struct {
+	pgd_t	pmd[1024];			/* A PGD Table, which is folded twice into an array of pmd entries */
+} pud_table_t;
+
+typedef struct {
+	pgd_t	segment_0_hole[1];				/* Segment 0: Hole, Program Starts at 0x40,0000, ... */
+	pgd_t	segment_0_and_1_program_pmd_entries[127];	/* Segments 0, 1:  ... seen often at mm->mmap->vm_start */
+	pgd_t	segment_2_mmaped_pmd_entries[64];		/* Segment 2 */
+	pgd_t	segment_3_program_stack_pmd_entries[64];	/* Segment 3 */
+	pgd_t	segment_4_unused_pmd_entries[64];		/* Segment 4 */
+	pgd_t	segment_5_unused_pmd_entries[64];		/* Segment 5 */
+	pgd_t	segment_6_unused_pmd_entries[64];		/* Segment 6 */
+	pgd_t	segment_7_unused_pmd_entries[64];		/* Segment 7 */
+	pgd_t	segment_8_unused_pmd_entries[64];		/* Segment 8 */
+	pgd_t	segment_9_unused_pmd_entries[64];		/* Segment 9 */
+	pgd_t	segment_A_unused_pmd_entries[64];		/* Segment A */
+	pgd_t	segment_B_unused_pmd_entries[64];		/* Segment B */
+	pgd_t	segment_C_vmalloc_pmd_entries[28];		/* Segment C */
+	pgd_t	segment_C_PKMAP_pmd_entries[1];			/* Segment C */
+	pgd_t	segment_C_unused_pmd_entries[3];		/* Segment C */
+	pgd_t	segment_C_ExtMemory_pmd_entries[32];		/* Segment C */
+	pgd_t	segment_D_KSEG_cached_pmd_entries[32];		/* Segment D */
+	pgd_t	segment_D_KSEG_uncached_pmd_entries[64];	/* Segment D */
+	pgd_t	segment_E_KIO_Cached_pmd_entries[64];		/* Segment E */
+	pgd_t	segment_F_KIO_Bypess_pmd_entries[64];		/* Segment E */
+} pgd_table_t;
+
+typedef pgd_t pmd_dir_t[1024];
+typedef pgd_t pud_dir_t[1024];
+typedef pgd_t pgd_dir_t[1024];
+
 typedef struct { unsigned long pgprot; } pgprot_t;
 typedef struct page *pgtable_t;
 

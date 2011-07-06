@@ -12,37 +12,49 @@ define show_mem_pte
     if ($argc > 1)
    	set $task = (struct task_struct *) $arg1
     else
+#	Calculates: $current, $mm, $pgd, $pgd_table
 	get_current
 	set $task = $current
     end	
 
-    printf "Display pte for task:0x%08x, vaddr:0x%08x\n", $task, $vaddr 
+    printf "Displaying pte for task:0x%08x mapping vaddr:0x%08x\n", $task, $vaddr
 
-    set $vaddrpdo = (($vaddr >> 22) & 0x3FF)*4
-    set $vaddrpto = (($vaddr >> 12) & 0x3FF)*4
-    set $vaddrofs = ($vaddr & 0xFFF)
+    set $pgd_index = (($vaddr >> 22) & 0x3FF)
+    set $pgd_offset = (($vaddr >> 22) & 0x3FF) * 4
+    set $pte_index = (($vaddr >> 12) & 0x3FF)
+    set $pte_offset = (($vaddr >> 12) & 0x3FF) * 4
+    set $page_offset = ($vaddr & 0xFFF)
 
-    set $taskmm = $task->mm
-    if $taskmm != 0
-    	printf "$taskmm = task->mm:0x%08x\n", $taskmm
-    else	
-	set $taskmm = $task->active_mm
-    	printf "$taskmm = task->active_mm:0x%08x\n", $taskmm
-    end
+    printf " pgd_offset:0X%08x:%d,\t", $pgd_offset, $pgd_offset
+    printf "pgd_index:0X%08x:%d\n", $pgd_index, $pgd_index
 
-    set $gpd = (unsigned)$taskmm->pgd
-    printf "Task pgd is 0x%08x+%X\n", $gpd, $vaddrpdo
+    printf " pte_offset:0X%08x:%d, \t", $pte_offset, $pte_offset
+    printf "pte_index:0X%08x:%d\n", $pte_index, $pte_index
 
-    set $pgt = *(unsigned*)($gpd + $vaddrpdo)
-    printf "task:0x%08x, pgd:0x%08x+0x%x, pgt:0x%08x+0x%x\n", $task, $gpd, $vaddrpdo, $pgt, $vaddrpto
+    printf "page_offset:0X%08x:%d\n\n", $page_offset, $page_offset
 
-    set $pte_addr = (unsigned*)($pgt + $vaddrpto)
-    set $pte = *$pte_addr
-    set $paddr = ($pte & 0xFFFFF000) + $vaddrofs
-    printf "Vaddr:0x%08x maps to Paddr:0x%08x pte:0x%08x.lsb:0x%03x = *pte_addr:0x%08x\n", $vaddr, $paddr, $pte, ($pte & 0xFFF), $pte_addr
+    set $pgd_table = *((pgd_table_t *) $pgd)
+    set $pmd = (pmd_t *) (((long) $pgd) + $pgd_offset)
+
+    printf "$pmd:0x%08x =  (pmd_table_t *) (((long *) $pgd:0x%08x) + $pgd_offset:0x%08x )\n", $pmd, $pgd, $pgd_offset
+    printf "*$pmd:\n"
+    print *$pmd
+
+    set $pte_table = $pmd->pud.pgd.page_table
+    printf "$pte_table:0x%08x  = $pmd->pud.pgd.page_table\n", $pte_table
+    print $pte_table
+
+    set $pte = &($pte_table->pte[$pte_index])
+
+    printf "$pte = 0x%08x = &($pte_table->pte[pte_index:%d])\n", $pte, $pte_index
+
+    printf "*$pte:\n"
+    print *$pte
+
 end
 document show_mem_pte
   Show the physical memory copy of PTE entry for the specified virtual address.
+  Shows both how it appears in the cache and uncached memory.
   Usage: show_mem_pte <virtual_address> [ <task-pointer> ]
 end
 
@@ -57,6 +69,23 @@ define get_current
     set $tinfo = (struct thread_info*)$taskbase	
     set $current = $tinfo->task
     printf "$current = 0x%x\n", $current
+    if $current != 0
+	if $current->mm != 0
+	   set $mm = $current->mm
+	else
+	  if $current->active_mm
+	    set $mm = $current->active_mm
+	  end
+	end
+	printf "$mm = 0x%x\n", $mm
+	if $mm
+#	   set $pgd_dir   = (pgd_dir_t *) $mm->pgd
+	   set $pgd = (pgd_t *) $mm->pgd
+	   set $pgd_table = (pgd_table_t *) $mm->pgd
+#	   printf "$pgd_dir = 0x%x\n", $pgd_dir
+	   printf "$pgd_table = 0x%x\n", $pgd_table
+	end
+    end
 end
 document get_current
   Get current task pointer
