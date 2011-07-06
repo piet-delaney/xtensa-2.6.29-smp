@@ -65,11 +65,11 @@ asmlinkage long xtensa_mmap2(unsigned long addr, unsigned long len,
 	int error = -EBADF;
 	struct file * file = NULL;
 
-#if 1
+#if 0
 	/*
 	 * REMIND FIXME:
 	 *
-	 * We are hitting a panic when len is > 7500 pages.
+	 * We were hitting a panic when len is > 7500 pages.
 	 * mm->nr_ptes is 1 and should be 0 in exit_mmap()
 	 * at BUGON(). The exit is due to a NULL PTE that
 	 * we are trying to use in a user 2nd level tlb fault.
