@@ -526,7 +526,7 @@ process(void)
  * help from skipcomment().
  */
 static Linetype
-parseline((void)
+parseline(void)
 {
 	const char *cp;
 	int cursym;
