@@ -15,6 +15,14 @@
 #define XATTR_SIZE_MAX 65536	/* size of an extended attribute value (64k) */
 #define XATTR_LIST_MAX 65536	/* size of extended attribute namelist (64k) */
 
+/*
+ * XTENSA:
+ *    Support old OPEN_MAX for old versaion of applications like LTP for a while more.
+ */
+#define CHILD_MAX        999    /* no limit :-) */
+#define OPEN_MAX         256	/* # open files a process may have */
+
+
 #define RTSIG_MAX	  32
 
 #endif

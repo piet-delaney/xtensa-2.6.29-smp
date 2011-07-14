@@ -352,6 +352,16 @@ unifdef-y += uinput.h
 unifdef-y += uio.h
 unifdef-y += unistd.h
 unifdef-y += usbdevice_fs.h
+
+#
+# XTENSA:
+#	Maintain user.h in headers, as in older kernels, for
+#	support for old applications in buildroot like LTP.
+#	We can likely easily drop this when we migrate to
+#	to newer versions of buildroot.
+# 
+unifdef-y += user.h
+
 unifdef-y += utsname.h
 unifdef-y += videodev2.h
 unifdef-y += videodev.h
