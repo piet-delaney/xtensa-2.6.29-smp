@@ -5,11 +5,28 @@
  * it under the terms of the GNU General Public License version2 as
  * published by the Free Software Foundation.
  *
- * Copyright (C) 2001 - 2010 Tensilica Inc.
+ * Copyright (C) 2001 - 2011 Tensilica Inc.
  */
 
 #ifndef _XTENSA_PAGE_H
 #define _XTENSA_PAGE_H
+
+#ifndef __KERNEL__
+/*
+ * XTENSA-WORKAROUND:
+ *     Provided for 'procps' package; though not apparenty required.
+ *     It will resort to using using sysconf() is not provided.
+ *     Does require the include/linux/page.h exist which was true
+ *     with older Xtensa kernels.
+ *
+ */
+#define PAGE_SHIFT              12
+#define PAGE_SIZE               (1UL << PAGE_SHIFT)
+#define PAGE_MASK               (~(PAGE_SIZE-1))
+#define PAGE_ALIGN(addr)        (((addr)+PAGE_SIZE - 1) & PAGE_MASK)
+
+#else /* __KERNEL__ */
+
 
 #include <asm/processor.h>
 #include <asm/types.h>
@@ -285,4 +302,6 @@ extern void copy_user_page(void*, void*, unsigned long, struct page*);
 				 VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC)
 
 #include <asm-generic/memory_model.h>
+
+#endif /* __KERNEL__ */
 #endif /* _XTENSA_PAGE_H */

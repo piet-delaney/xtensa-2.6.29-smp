@@ -9,3 +9,10 @@ header-y += elf.h
 header-y += user.h
 header-y += coprocessor.h
 
+#
+# XTENSA-WORKAROUND:
+#	Providing page.h for older buildroots for a while.
+#
+unifdef-y += page.h
+
+
