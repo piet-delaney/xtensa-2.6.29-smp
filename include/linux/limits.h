@@ -16,7 +16,7 @@
 #define XATTR_LIST_MAX 65536	/* size of extended attribute namelist (64k) */
 
 /*
- * XTENSA:
+ * XTENSA-WORKAROUND:
  *    Support old OPEN_MAX for old versaion of applications like LTP for a while more.
  */
 #define CHILD_MAX        999    /* no limit :-) */

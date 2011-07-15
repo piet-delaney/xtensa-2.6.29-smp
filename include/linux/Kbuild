@@ -191,6 +191,16 @@ unifdef-y += connector.h
 unifdef-y += cuda.h
 unifdef-y += cyclades.h
 unifdef-y += dccp.h
+
+#
+# XTENSA-WORKAROUND:
+#	Maintain dirent.h in headers, as in older kernels, for
+#	support for old applications in buildroot like LTP.
+#	We can likely easily drop this when we migrate to
+#	to newer versions of buildroot.
+# 
+unifdef-y += dirent.h
+
 unifdef-y += dlm.h
 unifdef-y += dlm_plock.h
 unifdef-y += edd.h
@@ -354,7 +364,7 @@ unifdef-y += unistd.h
 unifdef-y += usbdevice_fs.h
 
 #
-# XTENSA:
+# XTENSA-WORKAROUND:
 #	Maintain user.h in headers, as in older kernels, for
 #	support for old applications in buildroot like LTP.
 #	We can likely easily drop this when we migrate to
