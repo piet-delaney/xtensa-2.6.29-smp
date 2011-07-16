@@ -1,8 +1,11 @@
 VERSION = 2
 PATCHLEVEL = 6
 SUBLEVEL = 29
-EXTRAVERSION = -rc7
+EXTRAVERSION = -smp
 NAME = Erotic Pickled Herring
+
+# NOTE: Derived from -rc7
+
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
