@@ -59,6 +59,17 @@
 	.begin  no-absolute-literals
 
 _start:	
+#if defined(CONFIG_WAIT_FOR_XOCD)
+	/* 
+ 	 * Wait for xocd to set breakpoints; typically used with U-Boot
+ 	 * to get control with xocd on entry.
+ 	 */
+	movi    a0, 1
+wait_for_xocd:
+	nop
+	bnez    a0, wait_for_xocd
+#endif
+
 	/* 
 	 * Preserve the pointer to the boot parameter list, a2, in EXCSAVE_1.
 	 * EXCSAVE_1 will later be set up to point to exc_table[cpu]

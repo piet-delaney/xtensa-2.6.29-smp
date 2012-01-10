@@ -64,7 +64,17 @@ RomBootParam:
 	.word _bootparam
 
 	.align  4
+
 _SetupMMU:
+#if defined(CONFIG_INITIALIZE_RESET_REGISTERS)
+	/* Initialized Registers that are reset to their initial values */
+	movi    a0, 0
+	wsr	a0, WINDOWBASE
+	movi    a0, 1
+	wsr     a0, WINDOWBASE
+	movi	a0, 0x1F
+	wsr	a0, PS
+#endif
 	Offset = _SetupMMU - _ResetVector
 
 #ifndef CONFIG_INITIALIZE_XTENSA_MMU_INSIDE_VMLINUX
