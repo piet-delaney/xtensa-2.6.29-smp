@@ -14,7 +14,7 @@
 .begin schedule
 
 #if 0
-#undef XCHAL_HAVE_LOOPS		/* Toggle for full coverage testing */
+#define XCHAL_HAVE_LOOPS 0		/* Toggle for full coverage testing */
 #endif
 
 	.macro	src_b	r, w0, w1

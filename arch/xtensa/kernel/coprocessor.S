@@ -296,7 +296,7 @@ ENTRY(fast_coprocessor)
 	 */
 	movi	a0, coprocessor_owner_ptrs
 
-#if defined(XCHAL_HAVE_PRID) && defined(CONFIG_SMP)
+#if defined(XCHAL_HAVE_PRID) && XCHAL_HAVE_PRID && defined(CONFIG_SMP)
 	rsr     a4, PRID                # a4 = cpu
 	beqz	a4, 01f
 	nop
@@ -342,7 +342,7 @@ ENTRY(fast_coprocessor)
 	addi	a3, a3, -EXCCAUSE_COPROCESSOR0_DISABLED
 	movi	a0, coprocessor_owner_ptrs 
 
-#if defined(XCHAL_HAVE_PRID) && defined(CONFIG_SMP)
+#if defined(XCHAL_HAVE_PRID) && XCHAL_HAVE_PRID && defined(CONFIG_SMP)
 	rsr	a4, PRID		# a4 = cpu
 	beqz	a4, 21f
 	nop

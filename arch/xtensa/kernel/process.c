@@ -72,7 +72,7 @@ int process_debug = 0;
 #define dprintk(args...)
 #endif
 
-#if defined(CONFIG_DEBUG_KERNEL) && defined(XCHAL_HAVE_HIFI)
+#if defined(CONFIG_DEBUG_KERNEL) && defined(XCHAL_HAVE_HIFI) && XCHAL_HAVE_HIFI
 volatile int check_hifitest_registers = 0;
 
 /*
@@ -109,10 +109,10 @@ static inline void hifitest_register_check(struct thread_info *owner_ti, int cp_
 	}
 	return;
 }
-#else  /* !(CONFIG_DEBUG_KERNEL && XCHAL_HAVE_HIFI) */
+#else  /* !(CONFIG_DEBUG_KERNEL && defined(XCHAL_HAVE_HIFI) && XCHAL_HAVE_HIFI */
 #define check_hifitest_registers 0
 #define hifitest_register_check(ti, cp_num)
-#endif /* (CONFIG_DEBUG_KERNEL && XCHAL_HAVE_HIFI) */
+#endif /* (defined(CONFIG_DEBUG_KERNEL) && defined(XCHAL_HAVE_HIFI) && XCHAL_HAVE_HIFI) */
 
 /*
  * The task owning a coprocessor (CP) and it's associated registers
@@ -285,7 +285,7 @@ void cpu_idle_monitor(int sched)
 	int prid = 0;
 	unsigned long ccount = get_ccount();
 
-#if defined(XCHAL_HAVE_PRID)
+#if defined(XCHAL_HAVE_PRID) && XCHAL_HAVE_PRID
 	asm volatile ("rsr %0, "__stringify(PRID)"\n" : "=a" (prid));
 #endif
 
