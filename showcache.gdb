@@ -1,0 +1,1 @@
+Documentation/xtensa/gdbmacros/showcache.gdb

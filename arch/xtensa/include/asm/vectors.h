@@ -9,7 +9,7 @@
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 2008 - 2011 Tensilica Inc.
+ * Copyright (C) 2008 - 2012 Tensilica Inc.
  *
  * Pete Delaney <piet@tensilica.com>
  * Marc Gauthier <marc@tensilica.com
@@ -25,16 +25,17 @@
 #define KERNELOFFSET            	0xD0003000    /* Image Virtual Start Address */
 
 # if defined(XCHAL_HAVE_PTP_MMU) && XCHAL_HAVE_PTP_MMU && XCHAL_HAVE_SPANNING_WAY  
-  /* MMU v3 */
+  /* MMU v3  - XCHAL_HAVE_PTP_MMU  == 1 */
   #define PHYSICAL_MEMORY_ADDRESS 	0x00000000
   #define LOAD_MEMORY_ADDRESS  	  	0x00003000
 # else
+  /* MMU V2 -  XCHAL_HAVE_PTP_MMU  == 0 */
   #define PHYSICAL_MEMORY_ADDRESS      	0xD0000000
   #define LOAD_MEMORY_ADDRESS     	0xD0003000
 # endif
 
 #else /* !defined(CONFIG_MMU) */
-
+  /* MMU Not being used - Virtual == Physical */
   #define VIRTUAL_MEMORY_ADDRESS	0x00002000	/* VECBASE */
   #define KERNELOFFSET			0x00003000	/* Location of the start of the kernel text, _start */
   #define PHYSICAL_MEMORY_ADDRESS	0x00000000

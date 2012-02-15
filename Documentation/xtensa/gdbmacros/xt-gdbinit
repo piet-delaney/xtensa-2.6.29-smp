@@ -31,10 +31,12 @@ set var $sa_tcp_breakpoints = 0
 set var $set_exception_breakpoints = 0
 set var $mess_with_context_asid = 0
 
-set var $monitor_trace_supported = 1
-set var $monitor_trace_enabled = 0
-set var $monitor_verify_supported = 1
-set var $monitor_verify_enabled = 1
+set var $monitor_trace_supported = 0
+set var $monitor_trace_enabled =  0
+set var $monitor_trace_enabled_during_load = 0
+set var $monitor_jtag_verify_supported = 0
+set var $monitor_jtag_verify_enabled = 0
+set var $monitor_async_enabled = 0
 
 set var $debug_stress_test = 0
 set var $debug_irq_init = 0
@@ -73,17 +75,23 @@ set var $debug_xtensa_kmap_atomic = 0
 set var $debug_generic_highmem = 0
 set var $debug_enable_highmem_graphs = 1
 set var $debug_page_faults = 0
-set var $set_page_fault_debug = 1
+set var $set_page_fault_debug = 0
 set var $debug_free_area_init_node = 0
 set var $debug_unmap_region = 0
 set var $debug_open_eth = 0
 set var $debug_exceptions = 0
 set var $debug_page_migration = 0
 set var $mx = 0
-set var $debug_iss_simulation = 1
-set var $debug_iss_trace_enabled = 1
-set var $debug_iss_initial_trace_level = 0
-set var $debug_hw_breakpoints_supported = 0
+
+set var $debug_iss_simulation = 0
+set var $debug_iss_trace_enabled = 0
+set var $debug_iss_initial_trace_level = 80
+if $debug_iss_simulation
+    set var $debug_hw_breakpoints_supported = 0
+else
+    set var $debug_hw_breakpoints_supported = 1
+end
+
 set var $use_mmu = 1
 
 if $mx
@@ -127,6 +135,49 @@ set output-radix 16
 # more than once.
 delete
 
+# set remote memory-write-packet-size 524288
+#
+# DEFAULT is 262K if fixed
+# ========================
+# 217 KB/s with no Verify
+# FAILS FOR verify all
+# set remote memory-write-packet-size 262144 
+#
+# Works now with read ahead at 76  KB/s
+# set remote memory-write-packet-size 131072
+#
+# 77  KB/s with ASYNC jtag-verify all on
+# 183 KB/s with no Verify
+# set  remote memory-write-packet-size 65536
+#
+# 189 KB/s no jtag-veriry
+# FAILS for jtag-verify all
+# set remote memory-write-packet-size 32768
+#
+# 193 KB/s no jtag-veriry
+# 40KB/s with ASYNC verify write on
+# TOO BIG for WINDOWS?
+# set remote memory-write-packet-size 16384
+#
+# 195 KBps no jtag-veriify
+# 85 KBps with jtag-verfiy all and ASYNC
+# set remote memory-write-packet-size  8192
+#
+# 184K without jtag-verify
+# set remote memory-write-packet-size  4096
+#
+# set remote memory-write-packet-size  2048
+# set remote memory-write-packet-size  999
+# set remote memory-write-packet-size  512
+#  set remote memory-write-packet-size  256
+#
+#  set  remote memory-write-packet-size  fixed
+#  show remote memory-write-packet-size
+
+echo "set remotetimeout 300\n"
+set remotetimeout 10
+show remotetimeout
+
 if $mx
 	add-symbol-file vmlinux 0xd0000000
 #	add-symbol-file vmlinux 0
@@ -136,7 +187,7 @@ if $mx
 #	target remote gums:20002 0xd0000012
 #	target remote gums:20000 &spill_location_0
 #	target remote localhost:40000 &spill_location_0
-	target remote localhost:60000 &spill_location_0
+#	target remote localhost:60000 &spill_location_0
 #	target remote localhost:40001 &spill_location_1
 #	target remote localhost:20002 &spill_location_2
 #	target remote gums:20001 &spill_location_1
@@ -165,26 +216,37 @@ else
 #	  	echo 'target sim --turbo --cc_none --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out" \n'
 #	              target sim --turbo --cc_none --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out"
 
-#	  	echo 'target sim --turbo            --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out" \n'
-#	              target sim --turbo            --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out"
+	  	echo 'target sim --turbo            --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out" \n'
+	              target sim --turbo            --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out"
 
-		echo 'target sim                    --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out" \n'
-	              target sim                    --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out"
+#		echo 'target sim                    --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out" \n'
+#	              target sim                    --memlimit=128 --client_cmds="trace --level 0 --syms iss_trace.out"
 
 		echo "\n"
 		echo "Change iss trace level later, when you are near a problem, with:\n"
 		echo "    iss client trace level 3"
 	    else
-		 echo "target sim --turbo --memlimit=128\n"
-		       target sim --turbo --memlimit=128
+#		 echo "target sim --turbo --memlimit=128\n"
+#		       target sim --turbo --memlimit=128
+#
+		 echo "target sim --memlimit=128\n"
+		       target sim --memlimit=128
 	    end
 
 	else 
 
-	    echo "target remote localhost:60000  &spill_location_0\n"
+	    echo "target remote localhost:20001  &spill_location_0\n"
+#	    echo "target remote  tuscana2:20000  &spill_location_0\n"
 #	          target remote localhost:40000  &spill_location_0
-	          target remote localhost:60000  &spill_location_0
-#	          target remote  tuscana2:20000  &spill_location_0
+#	          target remote localhost:60000  &spill_location_0
+#	          target remote localhost:20001  
+#	          target remote localhost:20001  &spill_location_1
+ 	          target remote localhost:20000  &spill_location_0
+#  	          target remote  tuscana2:20000  &spill_location_0
+#	          target remote  wintrax2:20000  &spill_location_0
+#	          target remote  laptop:20000    &spill_location_0
+#  	          target remote  192.168.11.200:20000  &spill_location_0
+#  	          target remote  192.168.11.110:20000  &spill_location_0
         end
 end
 
@@ -192,34 +254,68 @@ if $debug_iss_simulation == 0
   reset
 
   if $monitor_trace_supported
-    echo "Monitor trace off\n"
-    monitor trace off
+    if $monitor_trace_enabled_during_load
+      echo "Monitor trace on\n"
+      monitor trace on
+      echo "monitor trace level 60; max compiled in to xocd is typically 65\n"
+      monitor trace level 95
+      echo "monitor trace file Trace2"
+      monitor trace file P:\Trace3
+    else
+       echo "Monitor trace off\n"
+       monitor trace off
+    end
   end
   
-  if $monitor_verify_supported
-    echo "monitor verify all off\n"
-    monitor verify all off
-    monitor verify verbose off
+if $monitor_jtag_verify_supported
+#  echo "monitor jtag-verify all off\n"
+#                jtag-verify all off\n"
+
+echo monitor jtag-verify all on
+monitor jtag-verify all on
+
+#   monitor jtag-verify all on
+# monitor jtag-verify write on
+
+   echo "monitor jtag-verify verbose off\n"
+#  monitor jtag-verify all off
+   monitor jtag-verify verbose off
   end
+
+if $monitor_async_enabled
+ 	echo "monitor async on\n"
+ 	monitor async on
+else
+# 	echo "monitor async off\n"
+# 	monitor async off
+end
+
+  
   
   echo "load: Started\n"
+  shell date
   load
+  shell date
   echo "load: Completed\n"
   
   if $monitor_trace_supported
     if $monitor_trace_enabled
       echo "Monitor trace on\n"
       monitor trace on
-      monitor trace level 35
+      echo "monitor trace level 80"
+      monitor trace level 80
+      echo "monitor trace file trace Trace3"
+      monitor trace file Trace3
     end
   end
   
-  if $monitor_verify_supported
-    if $monitor_verify_enabled
-      echo "Monitor verify all on\n"
-      monitor verify all on
+  if $monitor_jtag_verify_supported
+    if $monitor_jtag_verify_enabled
+      echo "Monitor jtag-verify all on\n"
+      monitor jtag-verify all on
     end
   end
+
 end
 
 #   NOTE: you can't enable this breakpoint while
@@ -370,7 +466,7 @@ def set_breakpoints
 	if $set_page_fault_debug
 		echo "\n"
 		echo "Enabling Tracing in do_page_fault\n"
-		set page_fault_debug = 1
+		set page_fault_debug = 0
 
 		break do_page_fault
 		set $do_page_fault_bpnum = $bpnum

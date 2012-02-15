@@ -122,9 +122,6 @@ extern void zones_init(void);
  */
 #define PHYS_TO_VIRT(pa, va)	{					\
 	(va) = (typeof(va)) (((int) pa) | 0XD0000000);			\
-									\
-	printk("%s: va:%p = pa:%p | 0XD0000000\n", __func__,		\
-		    va,     pa);					\
 }
 #else
 #define PHYS_TO_VIRT(pa, va) {						\
@@ -246,6 +243,7 @@ static int __init parse_bootparam(const bp_tag_t *phys_tag)
 
 	if (tag->id != BP_TAG_FIRST) {
 		printk(KERN_WARNING "%s: Invalid boot parameters!\n", __func__);
+		printk(KERN_WARNING "%s: Received Tag Id is 0x%x! Expected was 0x%x\n", __func__, tag->id, BP_TAG_FIRST);
 		return 0;
 	}
 

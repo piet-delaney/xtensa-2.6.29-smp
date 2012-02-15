@@ -82,9 +82,13 @@
  *     3  	Reserved		Reserved		Reserved
  */
 # if XCHAL_DCACHE_IS_COHERENT
-	movi	a3, 0x25		/* MX -- internal for writeback, RCW otherwise */
+	movi	a3, 0x25		/* For SMP/MX -- internal for writeback, RCW otherwise */
 # else
-	movi	a3, 0x15		/* non-MX -- always RCW */
+#  if 0 && defined(CONFIG_XTENSA_PLATFORM_XTAVNET)
+	movi	a3, 0x15		/* non-MX -- XT-Avnet Memory Controlers currently always support RCW */
+#  else
+	movi	a3, 0x29		/* non-MX -- Most cores use Std Memory Controlers which usually can't use RCW */
+#  endif
 # endif
 	wsr	a3, ATOMCTL
 #endif	/* XCHAL_HAVE_S32C1I && (XCHAL_HW_MIN_VERSION >= XTENSA_HWVERSION_RC_2008_0) */

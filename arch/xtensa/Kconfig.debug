@@ -177,20 +177,19 @@ config WAIT_FOR_XOCD
 	help
 	  Useful when debugging the kernel and comming from U-Boot.
 
-	  If unsure, say "N".
+	  If unsure, say N.
 
 config INITIALIZE_RESET_REGISTERS
-	bool "Initialized Registers that are reset to their initial values"
-	default y if XTENSA_PLATFORM_SIRIUS
+	bool "Initialized Registers that are normally reset to their initial values"
 	default n
 	help
-	   Useful/Needed in the unusual situation where Xtensa Linux is run on
+	   Useful/Needed in the unusual situation where Xtensa Linux is run as 
 	   a secondary processor and the primary processor may not have left 
 	   registers in their reset state. Leaving this here for now as a debug
 	   option as it could be argued that the primary processor should be
-	   transferring control to Linux in a clean state.
+	   transferring control to Linux in a clean state; U-Boot for example.
 
-	   If using SIRIS Platform, at least for now, say "Y" otherwise if unsure, say "N".
+	   If unsure, say N.
 
 
 config OPTIMIZE_INLINING

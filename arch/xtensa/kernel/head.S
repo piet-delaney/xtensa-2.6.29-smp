@@ -225,7 +225,7 @@ _startup:
 	wsr	a0, ICOUNTLEVEL
 
 	.set	_index, 0
-	.rept	XCHAL_NUM_DBREAK - 1
+	.rept	XCHAL_NUM_DBREAK
 	wsr	a0, DBREAKC + _index
 	.set	_index, _index + 1
 	.endr
@@ -244,7 +244,7 @@ _startup:
 	/* Disable all timers. */
 
 	.set	_index, 0
-	.rept	XCHAL_NUM_TIMERS - 1
+	.rept	XCHAL_NUM_TIMERS
 	wsr	a0, CCOMPARE + _index
 	.set	_index, _index + 1
 	.endr
@@ -344,17 +344,19 @@ _startup:
 	s32i	a0, a2, 0
 	__endla	a2, a4, 4
 
-#if XCHAL_DCACHE_IS_WRITEBACK
-
-	/* After unpacking, flush the writeback cache to memory so the
-	 * instructions/data are available.
+	/* After unpacking, invalidate the instruction cache, and flush the
+	 * writeback data cache to memory, so the fetch engine sees the new instructions.
 	 */
-
+#if XCHAL_DCACHE_IS_WRITEBACK
 	___flush_dcache_all a2 a3
 #endif
+	memw
+	isync
+	___invalidate_icache_all a2 a3
+	isync
 
-// FIXME: CPU should come up that way
-
+	//  FIXME: remove this.  Not needed.
+	//  Data cache should already be initialized by now.
 	___invalidate_dcache_all a2 a3
 
 #ifdef CONFIG_ARCH_HAS_SMP

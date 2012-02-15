@@ -20,7 +20,7 @@ def icshow
   ###  FIXME: not tested with big-endian.
   ###
   set $isize = xchal_icache_size
-  set $ilinesize = xchal_icache_linesize;
+  set $ilinesize = xchal_icache_linesize
   set $iways = xchal_icache_ways
   set $ilockable = xchal_icache_line_lockable
   set $bigendian = xchal_have_be

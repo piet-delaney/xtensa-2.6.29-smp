@@ -316,7 +316,7 @@ bad_page_fault(struct pt_regs *regs, unsigned long address, int sig)
 	epc = get_sr(EPC);
 	epc1 = get_sr(EPC1);
 
-#if defined(XCHAL_HAVE_PRID) && XCHAL_HAVE_PRID
+#if XCHAL_HAVE_PRID
 	prid = get_sr(PRID);
 #endif
 	rasid = get_sr(RASID);

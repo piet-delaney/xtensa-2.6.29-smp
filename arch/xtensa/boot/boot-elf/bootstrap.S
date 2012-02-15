@@ -67,13 +67,21 @@ RomBootParam:
 
 _SetupMMU:
 #if defined(CONFIG_INITIALIZE_RESET_REGISTERS)
-	/* Initialized Registers that are reset to their initial values */
+	/* 
+ 	 * Initialized Registers that are reset to their initial values 
+ 	 * Makes it possible to single step thru early MMU initialization
+ 	 * in the case of code branching to the ResetVector when in fact
+ 	 * the registers are not in their normal reset state.
+ 	 */
 	movi    a0, 0
 	wsr	a0, WINDOWBASE
+	rsync
 	movi    a0, 1
-	wsr     a0, WINDOWBASE
+	wsr     a0, WINDOWSTART
+	rsync
 	movi	a0, 0x1F
 	wsr	a0, PS
+	rsync
 #endif
 	Offset = _SetupMMU - _ResetVector
 
@@ -110,7 +118,7 @@ set_breakpoints:
 	jx      a0				# Typically calls _startup; a2 = &BootParams
 
 	.align 4
-//	.section .bootstrap.data, "aw"
+	.section .bootstrap.data, "aw"
 
 	.globl _bootparam			# See RomBootParam in bootstrap.S
 _bootparam:
