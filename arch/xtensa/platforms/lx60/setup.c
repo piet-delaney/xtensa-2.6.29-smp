@@ -129,7 +129,11 @@ struct board_info_s {
 		enum 		 xtensa_board board;
 		char 		*board_name;
 };
-struct board_info_s  board_info[3] = {
+struct board_info_s  board_info[4] = {
+	{ .himem = (unsigned int) ((128 * 1024 * 1024) - 1),
+	  .board = AVNET_ML605,
+	  .board_name = "AVNET_ML605"
+	},
 	{ .himem = (unsigned int) ((96 * 1024 * 1024) - 1),
 	  .board = AVNET_LX200,
 	  .board_name = "AVNET_LX200"
@@ -207,7 +211,7 @@ void platform_init(bp_tag_t *bootparams)
 	saved_addr_exception_hander_addr = trap_set_early_C_handler(EXCCAUSE_LOAD_STORE_ADDR_ERROR, probe_exception_handler);	/* 15 */
 	trap_enable_early_exc_table();		/* Enable Exception Table usage by setting excsave1 register */
 
-	for (board = 0; board < 3; board++) {
+	for (board = 0; board < 4; board++) {
 		bus_errors = 0;
 		bi = &board_info[board];
 #ifdef CONFIG_MMU

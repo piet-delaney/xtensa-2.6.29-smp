@@ -5,7 +5,7 @@
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 2009 Tensilica Inc.
+ * Copyright (C) 2012 Tensilica Inc.
  */
 
 #if 0
@@ -64,7 +64,7 @@
  *  IRQ 0   UART          --> IRQ 3
  *  IRQ 1   OETH          --> IRQ 4
  *
- *  						LX200			LX110
+ *  						LX200			LX110 & ML605
  *  IRQ 2   AUDIO         --> IRQ 5		Output Underrun		Output Underrun AND Output Level
  *  IRQ 3   AUDIO         --> IRQ 6		Output Level		Input  Underrun AND Output Level
  *  IRQ 4   AUDIO         --> IRQ 7		Output Underrun
@@ -90,8 +90,8 @@
 
 /* 
  * Audio Driver (/dev/dsp): IRQ Numbers assigned dymically in Audio Driver (sound_lx200.c).
- * This is done to allow the driver to work for both the LX200 and the LX110. The IRQ
- * numbers are different for the boards, so I saw little gain by adding constants here.
+ * This is done to allow the driver to work for the LX200, LX110, and ML605. The IRQ
+ * numbers are different for some of the boards, so I saw little gain by adding constants here.
  */ 
 
 
@@ -109,11 +109,15 @@
 #define LX60_LCD_INSTR_ADDR	(char*)(XSHAL_IOBLOCK_BYPASS_VADDR + 0xD040000)
 #define LX60_LCD_DATA_ADDR	(char*)(XSHAL_IOBLOCK_BYPASS_VADDR + 0xD040004)
 
-/* LCD instruction and data addresses. */
+/* LX110 and ML605 use the same LCD instruction and data addresses. */
 #define LX110_LCD_INSTR_ADDR	(char*)(XSHAL_IOBLOCK_BYPASS_VADDR + 0xD0C0000)
+#define ML605_LCD_INSTR_ADDR	(char*)(XSHAL_IOBLOCK_BYPASS_VADDR + 0xD0C0000)
 #define LX110_LCD_DATA_ADDR	(char*)(XSHAL_IOBLOCK_BYPASS_VADDR + 0xD0C0004)
+#define ML605_LCD_DATA_ADDR	(char*)(XSHAL_IOBLOCK_BYPASS_VADDR + 0xD0C0004)
 
+/* LX110 and ML605 use the same address for the USB Controler */
 #define LX110_USB_CONTROLER_ADDR (char*)(XSHAL_IOBLOCK_BYPASS_VADDR + 0xD0D0000)	/* CYC67300 */
+#define ML605_USB_CONTROLER_ADDR (char*)(XSHAL_IOBLOCK_BYPASS_VADDR + 0xD0D0000)	/* CYC67300 */
 
 #define DIP_SWITCHES_ADDR	(XSHAL_IOBLOCK_BYPASS_VADDR+0xD02000C)
 

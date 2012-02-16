@@ -67,6 +67,7 @@ unsigned char *lcd_data_addr = NULL;
 static void lcd_put_byte(unsigned char *lcd_register_addr, unsigned char instr)
 {
 	switch(platform_board) {
+	case AVNET_ML605:
 	case AVNET_LX110:
 		*lcd_register_addr =  (instr & 0XF0);		/* High Nibble First */
 		*lcd_register_addr =  (instr << 4) & 0XF0;
@@ -125,6 +126,11 @@ static int __init lcd_init(void)
 		lcd_data_addr =  (char *) LX110_LCD_DATA_ADDR;
 		break;
 		
+	case AVNET_ML605:
+		lcd_instr_addr = (char *) ML605_LCD_INSTR_ADDR;
+		lcd_data_addr =  (char *) ML605_LCD_DATA_ADDR;
+		break;
+		
 	case AVNET_LX200:
 		goto done;
 
@@ -133,7 +139,7 @@ static int __init lcd_init(void)
 	}
 
 	/*
-	 * Both the LX60 and LX110 SYNC-UP with
+	 * The LX60, LX110, and ML605 SYNC-UP with
 	 * the same 3 initial instructions,
 	 */
 	*lcd_instr_addr = LCD_DISPLAY_MODE_8BIT;
@@ -145,6 +151,7 @@ static int __init lcd_init(void)
 
 	switch(platform_board) {
 	case AVNET_LX110:
+	case AVNET_ML605:
 		*lcd_instr_addr = LCD_DISPLAY_MODE_4BIT;		/* Only looks at bits 4...7 */
 		mdelay(20);
 		lcd_put_byte(lcd_instr_addr, LCD_DISPLAY_MODE_4BIT);	/* Sees all 8 bits via two writes */

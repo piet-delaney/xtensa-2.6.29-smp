@@ -2,14 +2,15 @@
  * sound/oss/sound_lx200.c
  *
  * Audio driver for playing a PCM bitstream over a DAC.
- * Designed to work on the LX200 and new LX110 FPGA Avnet boards.
- * Currently works on the LX200 but is silent on the LX110.
+ * Designed to work on the LX200, LX110, and ML605, FPGA Avnet boards.
+ * Currently works on the LX200 but is still silent on the LX110.
+ * Yet Untested on ML605; likely very similar to LX110 and also silent.
  *
  * This file is subject to the terms and conditions of the GNU General Public
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 2007-2010 Tensilica Inc.
+ * Copyright (C) 2007-2012 Tensilica Inc.
  *
  * Dan Nicolaescu <dann@tensilica.com>
  * Pete Delaney <piet@tensilica.com>
@@ -49,7 +50,7 @@
  * The LX200 and LX110 assign interrupts a bit differently.
  * The LX200 generates different interrupts for FIFO over runs 
  * and when the FIFO falls below the low water mark (FIFO onstantsEVEL).
- * The LX110 combinds them onto the same IRQ.
+ * The LX110, and likely also the ML605, combinds them onto the same IRQ.
  *
  * The FIFO LEVEL interrupt is assert whenever the
  * number of FIFO entries is  less than of equal to
@@ -242,12 +243,14 @@ void break_on(void) {
  *
  * The following constants are calculated calcuatated during
  * module initialization and based to the FIFO size; which
- * currently appears to be different for the LX110 and LX200.
+ * currently appears to be different for the LX110 and LX200;
+ * ML605 said to be the same as LX100.
  */
 #define LX200_TOTAL_AUDIO_FIFO_ENTRIES 	(8192 * 4)
 #define LX110_TOTAL_AUDIO_FIFO_ENTRIES 	(4096)						/* GOT Bus errors with 8192 */
+#define ML605_TOTAL_AUDIO_FIFO_ENTRIES 	(4096)						/* REMIND: Verify */
 
-int total_audio_fifo_entries = -1;	/* LX200_TOTAL_AUDIO_FIFO_ENTRIES or LX110_TOTAL_AUDIO_FIFO_ENTRIES */
+int total_audio_fifo_entries = -1;	/* LX200_TOTAL_AUDIO_FIFO_ENTRIES || LX110_TOTAL_AUDIO_FIFO_ENTRIES || ML605_TOTAL_AUDIO_FIFO_ENTRIES */
 int low_water_mark = -1;		/* Calc constant during initialization; currently 50% of total_audio_fifo_entries */
 int entries_above_low_water_mark = -1;	/* total_audio_fifo_entries - low_water_mark */
 int bytes_above_low_water_mark = -1;	/* entries_above_low_water_mark  * 2 */
@@ -433,6 +436,7 @@ void slx200_set_board_specific_constants(void)
 		slx200_initialized++;
 		break;
 
+	case AVNET_ML605:
 	case AVNET_LX110:
 				    /* I2S Output Register Mappings */
 		i2s_TxVersion =     (volatile int *) (XSHAL_IOBLOCK_BYPASS_VADDR+0x0D080000);
@@ -548,7 +552,7 @@ static void aic23_config_dac(void)
 	/*
  	 * On the LX200 we have crystal clock on the board
  	 * whereas on the LX110 the FPGA RTL provides the
- 	 * clock synthesizer.
+ 	 * clock synthesizer; Likely same for ML605.
  	 *
  	 * On the LX200 audio sampling had aliasing
  	 * issues with the data phase delays between the
@@ -569,6 +573,7 @@ static void aic23_config_dac(void)
 		break;
 
 	case AVNET_LX110:
+	case AVNET_ML605:
 		aic23_write_reg(AIC23_RESET,      0x000); 	/* reset AIC23 */
 		aic23_write_reg(AIC23_LEFTINVOL,  0x017); 	/* enabling left input */
 		aic23_write_reg(AIC23_RIGHTINVOL, 0x017); 	/* enabling right input */
@@ -867,6 +872,7 @@ static void i2s_tx_start(unsigned char channels_mask)
 	I2S_TX_START = 1;	/* Only can start channel 0 (L&R) */
 	break;
 
+  case AVNET_ML605:
   case AVNET_LX110:
   	config = (I2S_TX_CONFIG & 0x0fffffff) | channels_mask << TXCONFIG_CHAN_EN;
   	I2S_TX_CONFIG = config | 0x1;
@@ -888,6 +894,7 @@ static void i2s_tx_stop(void)
 	break;
 
   case AVNET_LX110:
+  case AVNET_ML605:
   	config = I2S_TX_CONFIG;
   	I2S_TX_CONFIG = config & 0xfffffffe;
 	break;
@@ -914,7 +921,8 @@ static void init_i2s_fifo(void)
 		I2S_OUT_DATA_0 = 0;				/* Right */
 		I2S_OUT_DATA_0 = 0;				/* Left  */
 #if 0		
-		if (platform_board == AVNET_LX110) {
+		if ((platform_board == AVNET_LX110) ||
+		    (platform_board == AVNET_LX110)) {
 			I2S_OUT_DATA_1 = 0;			/* Right */
 			I2S_OUT_DATA_1 = 0;			/* Left  */
 
@@ -1111,6 +1119,7 @@ slx200_audio_ioctl(struct inode *inode, struct file *file, uint cmd, ulong arg)
 			break;
 
 		case AVNET_LX110:
+		case AVNET_ML605:
 			if (i2s_tx_below_level)
 				available_entries += (total_audio_fifo_entries/2);
 			break;
@@ -1150,6 +1159,7 @@ slx200_audio_ioctl(struct inode *inode, struct file *file, uint cmd, ulong arg)
 			break;
 
 		case AVNET_LX110:
+		case AVNET_ML605:
 			if (!i2s_tx_below_level)
 				available_entries += (total_audio_fifo_entries/2);
 			break;
@@ -1358,12 +1368,13 @@ static ssize_t slx200_audio_write(struct file *file, const char __user *initial_
 		 */ 
 		switch(platform_board) {
 		case AVNET_LX200:
-			fifo_entries = NUM_FIFOENTRIES;						 /* REMIND: How to do this on LX110 */
+			fifo_entries = NUM_FIFOENTRIES;						 /* REMIND: How to do this on LX110/ML605 */
 			fifo_level = INT_FIFOLEVEL;
 			free_fifo_in_bytes = (total_audio_fifo_entries - fifo_entries) * 2;
 			break;
 		
 		case AVNET_LX110:
+		case AVNET_ML605:
 			break;
 
 		default:
@@ -1408,7 +1419,8 @@ out:
 	if (copied) {
 		if (written) {
 			I2S_TX_INT_MASK |= 0x2;
-			if (platform_board == AVNET_LX110) {
+			if ((platform_board == AVNET_LX110) ||
+			    (platform_board == AVNET_ML605)) {
 #if 0
 				i2s_tx_start(0x1);
 #endif
@@ -1493,7 +1505,7 @@ static irqreturn_t i2s_output_interrupt(int irq, void *dev_id)
 				if (platform_board ==  AVNET_LX200) {
 					fifo_entries = NUM_FIFOENTRIES;	
 					if ( buf->len > ((total_audio_fifo_entries - fifo_entries)*2)) {
-						CM_PUTC('^');	/* Too High; LX110 won't know */
+						CM_PUTC('^');	/* Too High; LX110/ML605 won't know */
 						break;
 					}
 				}
@@ -1664,6 +1676,7 @@ static int slx200_audio_free_irqs(void)
 		free_irq(i2s_input_fifo_level_irq, (void *) INPUT_FIFO_LEVEL);
 		/* FALLTHROUGH */
 	case AVNET_LX110:
+	case AVNET_ML605:
 		free_irq(i2s_output_fifo_underrun_irq, (void *) OUTPUT_FIFO_UNDERRUN);
 		free_irq(i2s_input_fifo_underrun_irq, (void *) INPUT_FIFO_UNDERRUN);
 		break;
@@ -1716,6 +1729,7 @@ static int slx200_audio_open(struct inode *inode, struct file *file)
 		/* FALLTHROUGH */
 
 	case AVNET_LX110:
+	case AVNET_ML605:
 		retval3 = request_irq(i2s_output_fifo_underrun_irq, i2s_output_interrupt, AUDIO_REQUEST_IRQ_FLAG, "slx200", (void *) OUTPUT_FIFO_UNDERRUN);
 		if (retval3 != 0) {
 			printk("%s: retval3 = %d = request_irq(i2s_output_fifo_underrun_irq:%d, ...);\n", __func__,
@@ -1803,7 +1817,8 @@ static int hifi_audio_aic_init(int freq, int channels)
     if (slx200_set_sample_rate(AUDIO_RATE_DEFAULT) == -1)
         return -1;
 
-    if (platform_board == AVNET_LX110) {
+    if ((platform_board == AVNET_LX110) ||
+        (platform_board == AVNET_ML605)) {
     	clk_syn_init(freq);
     	i2s_tx_init(bit_res, freq, freq*256, fifo_int_level_shift);
     }
@@ -1952,6 +1967,7 @@ static int __init slx200_init(void)
 	switch(platform_board) {
 	case AVNET_LX200:
 	case AVNET_LX110:
+	case AVNET_ML605:
 		rc = hifi_audio_aic_init(SAMPLERATE, channels);
 		if (rc == -1)
 			return(-1);
@@ -2004,6 +2020,7 @@ static int __init slx200_init(void)
 		break;
 
 	case AVNET_LX110:
+	case AVNET_ML605:
 	default:
 		break;
 	}

@@ -22,7 +22,8 @@ enum xtensa_board {
 	AVNET_UNKNOWN = 0,
 	AVNET_LX60  = 1,
 	AVNET_LX110 = 2,
-	AVNET_LX200 = 4
+	AVNET_LX200 = 4,
+	AVNET_ML605 = 5
 };
 
 extern enum xtensa_board platform_board;
