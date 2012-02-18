@@ -285,7 +285,7 @@ void cpu_idle_monitor(int sched)
 	int prid = 0;
 	unsigned long ccount = get_ccount();
 
-#if XCHAL_HAVE_PRID == 1)
+#if XCHAL_HAVE_PRID
 	asm volatile ("rsr %0, "__stringify(PRID)"\n" : "=a" (prid));
 #endif
 

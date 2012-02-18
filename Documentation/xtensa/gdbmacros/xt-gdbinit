@@ -81,6 +81,9 @@ set var $debug_unmap_region = 0
 set var $debug_open_eth = 0
 set var $debug_exceptions = 0
 set var $debug_page_migration = 0
+set var $debug_mount_root = 0
+set var $debug_ramfs = 0
+set var $debug_init = 0
 set var $mx = 0
 
 set var $debug_iss_simulation = 0
@@ -727,6 +730,59 @@ def set_breakpoints
 	else
 		echo "\n"
 		echo "NOT Setting Module Breakpoints\n"	
+	end
+
+	if ($debug_mount_root != 0)
+		echo "\n"
+		echo "Setting mount_root Breakpoints\n"
+		break mount_root
+		break populate_rootfs
+		break init_post
+		break run_init_process
+		break do_kern_mount
+		break do_syscall_trace_enter
+		break do_execve
+		break load_elf_binary
+		break sys_read
+		break gunzip
+		break xtensa_clone
+#		set initcall_debug = 1
+		break kernel_init
+	else
+		 echo "\n"
+		 echo "NOT Setting mount_root Breakpoints\n"
+	end
+
+	if ($debug_init != 0)
+		echo "\n"
+		echo "Setting debug_init Breakpoints\n"
+		break init_post
+		break xtensa_execve
+		break kernel_read
+		break do_sync_read
+		break do_sync_write
+	else
+		echo "\n"
+		echo "NOT Setting debug_init Breakpoints\n"
+	end
+
+	if ($debug_ramfs != 0)
+		echo "\n"
+		echo "Setting RamFS Breakpoints\n"
+		break init_ramfs_fs
+		break init_rootfs
+#		break ramfs_get_inode
+		break ramfs_fill_super
+		break generic_file_aio_read
+		break generic_file_aio_write
+		break generic_file_mmap
+		break simple_sync_file
+		break do_kern_mount
+		break unpack_to_rootfs
+		break write_buffer
+	else
+		 echo "\n"
+		 echo "NOT Setting RamFS Breakpoints\n"
 	end
 
 	# break print_oops_end_marker
