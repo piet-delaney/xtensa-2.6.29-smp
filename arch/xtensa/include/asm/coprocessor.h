@@ -5,7 +5,7 @@
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 2003 - 2009 Tensilica Inc.
+ * Copyright (C) 2003 - 2012 Tensilica Inc.
  */
 
 
@@ -19,15 +19,94 @@
 #ifdef __ASSEMBLY__
 # include <variant/tie-asm.h>
 
-.macro	xchal_sa_start  a b
-	.set .Lxchal_pofs_, 0
-	.set .Lxchal_ofs_, 0
+/*
+ * In generic parts of the kernel the registers for a core need to be saved and restored.
+ * The classic case is the _switch_to() code in arch/xtensa/kernel/entry.S; which will invoke:
+ *
+ *	save_xtregs_user			[Generic - Defined below]
+ *	load_xtregs_user			[Generic - Defined below]
+ *
+ * to save cores registers. These two functions are defined below but
+ * need to invoke variant specific macros which know what registers the
+ * variant has.
+ *
+ *	xchal_ncp_store				[Variant Specific]
+ *	xchal_ncp_load				[Variant Specific]
+ *
+ * These variant specific macros are defined for each variant. For Example:
+ *
+ *	 variants/coh_232l/include/variant/tie-asm.h
+ *
+ * These variant specific macros make use of generic macros to start a load/store
+ * save area and to align before saving or storing the variants registers. Ex:
+ *
+ *	xchal_sa_start				[Generic - Defined below]
+ *	xchal_sa_align				[Generic - Defined below]
+ *
+ * Below we define the generic macros that will be used with the variant specific macros.
+ */
+
+
+
+/*
+ *  Invoked at start of save area load/store sequence macro to setup macro
+ *  internal offsets.  Not usually invoked directly.
+ *
+ *  Macro Parameters:
+ *      continue        0 for 1st sequence, 1 for subsequent consecutive ones.
+ *      totofs          offset from original ptr to next load/store location.
+ */
+.macro  xchal_sa_start  continue totofs
+    .ifeq \continue
+	.set   .Lxchal_pofs_, 0  	/* offset from original ptr to current \ptr */
+	.set   .Lxchal_ofs_, 0         	/* offset from current \ptr to next load/store location */
+    .endif
+
+    .if \totofs + 1                 			/* if totofs specified (not -1) */
+	.set   .Lxchal_ofs_, \totofs - .Lxchal_pofs_ 	/* specific offset from original ptr */
+    .endif
 .endm
 
-.macro	xchal_sa_align  ptr minofs maxofs ofsalign totalign
-	.set	.Lxchal_ofs_, .Lxchal_ofs_ + .Lxchal_pofs_ + \totalign - 1
-	.set	.Lxchal_ofs_, (.Lxchal_ofs_ & -\totalign) - .Lxchal_pofs_
+/*
+ *  Align portion of save area and bring ptr in range if necessary.
+ *  Used by save area load/store sequences.  Not usually invoked directly.
+ *  Allows combining multiple (sub-)sequences arbitrarily.
+ *
+ *  Macro Parameters:
+ *      ptr             pointer to save area (may be off, see .Lxchal_pofs_)
+ *      minofs,maxofs   range of offset from cur ptr to next load/store loc;
+ *                      minofs <= 0 <= maxofs  (0 must always be valid offset)
+ *                      range must be within +/- 30kB or so.
+ *      ofsalign        alignment granularity of minofs .. maxofs (pow of 2)
+ *                      (restriction on offset from ptr to next load/store loc)
+ *      totalign        align from orig ptr to next load/store loc (pow of 2)
+ *
+ *  NOTE: Kept in sync with <xtensa_tools_root>/xtensa-elf/include/xtensa/config/core.h
+ *        in Tensilica software tools; Ex: swtools-x86-linux.
+ */
+.macro  xchal_sa_align  ptr minofs maxofs ofsalign totalign
+	/*
+	 * First align where we start accessing the next register
+	 * per \totalign relative to original ptr (i.e. start of the save area):
+	 */
+	.set	.Lxchal_ofs_, \
+		((.Lxchal_pofs_ + .Lxchal_ofs_ + \totalign - 1) & -\totalign) - .Lxchal_pofs_
+
+	/*
+	 * If necessary, adjust \ptr to bring .Lxchal_ofs_ in acceptable range:
+	 */
+	.if (((\maxofs) - .Lxchal_ofs_) & 0xC0000000) | \
+	    ((.Lxchal_ofs_ - (\minofs)) & 0xC0000000) | \
+	    (.Lxchal_ofs_ & (\ofsalign-1))
+		/* TODO: optimize to addmi, per aligns and .Lxchal_ofs_ */
+		.set   .Ligmask, 0xFFFFFFFF
+		addi   \ptr, \ptr, (.Lxchal_ofs_ & .Ligmask)
+		.set   .Lxchal_pofs_, .Lxchal_pofs_ + (.Lxchal_ofs_ & .Ligmask)
+		.set   .Lxchal_ofs_, (.Lxchal_ofs_ & ~.Ligmask)
+	.endif
 .endm
+
+
 
 #define _SELECT	(  XTHAL_SAS_TIE | XTHAL_SAS_OPT \
 		 | XTHAL_SAS_CC \
