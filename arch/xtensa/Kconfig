@@ -210,6 +210,7 @@ config ARCH_HAS_SMP
 config SMP
 	bool "Enable Symmetric multi-processing support"
 	depends on ARCH_HAS_SMP
+	select CC_OPTIMIZE_FOR_DEBUGGING
 	help
 	  Enabled SMP Software; allows more than one CPU/CORE
 	  to be activated during startup.

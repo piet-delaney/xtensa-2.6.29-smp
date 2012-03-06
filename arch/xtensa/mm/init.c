@@ -31,7 +31,7 @@
 #include <asm/page.h>
 #include <asm/setup.h>
 
-#if defined(__XCC__) || defined(XTENSA_XCC_WORKAROUND_22415_ENABLED)
+#if !defined(__XCC__) || defined(XTENSA_XCC_WORKAROUND_22415_ENABLED)
 /*
  * Functions that gcc optimizes away but has extern statements for.
  * XCC doesn't optimize them away via the GCC frontend. 
