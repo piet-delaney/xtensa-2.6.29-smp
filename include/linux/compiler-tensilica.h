@@ -33,15 +33,20 @@
  #define XTENSA_XCC_WORKAROUND_22651_ENABLED
 #endif
 
+/* Workarounds that can be dropped after D.4 */
+#if  (__XCC__ < 9000) || ( (__XCC__ == 9000) && (__XCC_MINOR__ < 4))
+#define XTENSA_XCC_WORKAROUND_19701_ENABLED	"xt-ld Relaxation issue in entry.S"
+#define XTENSA_XCC_WORKAROUND_22415_ENABLED     "xcc optimization requires weak functions in init.c"
+#endif
+
 /*
  * The following are Open Problem Reports (PR), when they are fixed these workarounds
  * will be disabled for the current and subsequent versions of XCC. These #defines are
  * used by C code and the equilavent Makefile workarounds are enabled in the Xtensa kernel 
  * Makefile files (arch/xtensa/Makefile) based on the current versions of the xtensa tools.
  */
-#define XTENSA_XCC_WORKAROUND_19701_ENABLED	"xt-ld Relaxation issue in entry.S"
-#define XTENSA_XCC_WORKAROUND_22415_ENABLED	"xcc optimization requires weak functions in init.c"
 #define XTENSA_XCC_WORKAROUND_22663_ENABLED	"libctc32.c variable type in struct member"
 #define XTENSA_XCC_WORKAROUND_22679_ENABLED	"IP V6 addrlabel.c ip6addrlbl_init_table implicit literals"
+#define XTENSA_XCC_WORKAROUND_23816_ENABLED	"A few Weak functions still required in init.c not fixed by PR:22415"
 
 #endif /* __XCC__ */
