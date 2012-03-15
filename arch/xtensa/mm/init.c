@@ -36,7 +36,7 @@
  * Functions that gcc optimizes away but has extern statements for.
  * XCC doesn't optimize them away via the GCC frontend. 
  *
- * tentative list of remaining Workarounds not resolved by 22415.
+ * Tentative list of remaining Workarounds not resolved by 22415.
  *
  * See Problem Reports: 22415, 23816.
  */

@@ -1,4 +1,4 @@
-#
+#/SMP
 # Example .xt-gdbinit file:
 #
 #	Sets a hardware breakpoint at _startup to setup
@@ -24,12 +24,27 @@ set print pretty
 set print array
 set print union
 set pagination off
-set can-use-hw-watchpoints 1
 set print elements 64
 set var $doing_commands = 0
 set var $sa_tcp_breakpoints = 0
 set var $set_exception_breakpoints = 0
 set var $mess_with_context_asid = 0
+
+#
+# The HiFi-2 SMP Demo Board supports MX/SMP but not hw-watchpoints.
+#
+set var $hifi2_smp_demo_board = 1
+set var $hifi2_smp_core = 0
+
+if $hifi2_smp_demo_board
+  set var $can_use_hw_watchpoints = 0
+  set var $mx = 1
+  set var $debug_mx = 0
+else
+  set var $can_use_hw_watchpoints = 1
+  set var $mx = 0
+  set var $debug_mx = 0
+end
 
 set var $monitor_trace_supported = 0
 set var $monitor_trace_enabled =  0
@@ -84,20 +99,27 @@ set var $debug_page_migration = 0
 set var $debug_mount_root = 0
 set var $debug_ramfs = 0
 set var $debug_init = 0
-set var $mx = 0
 
 set var $debug_iss_simulation = 0
 set var $debug_iss_trace_enabled = 0
 set var $debug_iss_initial_trace_level = 80
+
 if $debug_iss_simulation
     set var $debug_hw_breakpoints_supported = 0
 else
-    set var $debug_hw_breakpoints_supported = 1
+    if $can_use_hw_watchpoints
+        set var $debug_hw_breakpoints_supported = 1
+    else
+        set var $debug_hw_breakpoints_supported = 0
+    end
 end
 
+#
+# Running Xtensa Linux without a MMU isn't well tested.
+#
 set var $use_mmu = 1
 
-if $mx
+if $mx && $debug_mx
 	set var $debug_secondary = 1
 	set var $debug_ipi_messages = 1
 	set var $debug_cpu_init = 1
@@ -117,7 +139,7 @@ set logging file kgdb.log
 set logging overwrite on
 # show logging
 # set debug remote 10
-set debug remote 0
+# set debug remote 0
 # set backtrace limit 50
 
 display/i $pc
@@ -174,31 +196,32 @@ delete
 # set remote memory-write-packet-size  512
 #  set remote memory-write-packet-size  256
 #
-#  set  remote memory-write-packet-size  fixed
-#  show remote memory-write-packet-size
+set  remote memory-write-packet-size  fixed
+show remote memory-write-packet-size
 
-echo "set remotetimeout 300\n"
-set remotetimeout 10
+echo "set remotetimeout 60\n"
+set remotetimeout 60
 show remotetimeout
 
+
+
 if $mx
-	add-symbol-file vmlinux 0xd0000000
-#	add-symbol-file vmlinux 0
+	echo "Using MMU, assumne V2 MMU and Mappings\n"
+	echo "add-symbol-file vmlinux 0xd0003000\n"
+	add-symbol-file vmlinux 0xd0003000
 	file arch/xtensa/boot/Image.elf
-#	target remote gums:20000 0xd0000012
-#	target remote gums:20001 0xd0000012
-#	target remote gums:20002 0xd0000012
-#	target remote gums:20000 &spill_location_0
-#	target remote localhost:40000 &spill_location_0
-#	target remote localhost:60000 &spill_location_0
-#	target remote localhost:40001 &spill_location_1
-#	target remote localhost:20002 &spill_location_2
-#	target remote gums:20001 &spill_location_1
-#	target remote gums:20002 &spill_location_2
-#
-# 2nd Board
-#	target remote localhost:20010 0
-#	target remote localhost:20000 0
+
+        if ($hifi2_smp_core == 0)
+	    target remote localhost:20000 &spill_location_0
+	end
+
+	if ($hifi2_smp_core == 1)
+	    target remote localhost:20001 &spill_location_1
+	end
+
+	if ($hifi2_smp_core == 2)
+	    target remote localhost:20002 &spill_location_2
+	end
 else
 	if $use_mmu
 		echo "Using MMU, assumne V2 MMU Mappings\n"
@@ -491,7 +514,7 @@ def set_breakpoints
 	end
 
 	if ($mx != 0)
-	    # echo "MX\n"
+	    # echo "MX/SMP\n"
 	    if ($debug_cpu_init != 0)
 		echo "\n"
 		echo "Setting CPU Initialization Breakpoints\n"
@@ -987,7 +1010,7 @@ end
 # play with configurable global variables.
 #
 if $debug_hw_breakpoints_supported
-  show can-use-hw-watchpoints
+  show $can_use_hw_watchpoints
   hbreak _startup
 else
   break set_breakpoints

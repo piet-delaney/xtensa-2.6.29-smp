@@ -272,6 +272,12 @@ void platform_init(bp_tag_t *bootparams)
 	printk("%s(bootparams:%p): cpu:%d, platform_board:%d:'%s, platform_mem_size:0X%x:%d\n", __func__, 
 		   bootparams,     cpu,    platform_board,        
 				           platform_board_name,   platform_mem_size, platform_mem_size);
+#ifdef CONFIG_SMP
+done:
+#endif
+
+	return;
+
 }
 
 /* early initialization, after platform_init() */
