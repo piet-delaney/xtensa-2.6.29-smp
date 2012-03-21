@@ -364,6 +364,23 @@ config SERIAL_CONSOLE
 config XTENSA_ISS_NETWORK
 	def_bool n
 
+config KEXEC
+	bool "Kexec system call (EXPERIMENTAL)"
+	depends on EXPERIMENTAL
+	help
+	  kexec is a system call that implements the ability to shutdown your
+	  current kernel, and to start another kernel.  It is like a reboot
+	  but it is independent of the system firmware.   And like a reboot
+	  you can start any kernel with it, not just Linux.
+
+	  It is an ongoing process to be certain the hardware in a machine
+	  is properly shutdown, so do not be surprised if this code does not
+	  initially work for you.  It may help to enable device hotplugging
+	  support.
+
+	  Might be used to load secondary cores with DSP software and XTOS.
+
+	  If in doubt, say N.
 endmenu
 
 

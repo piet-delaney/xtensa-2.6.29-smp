@@ -53,9 +53,10 @@ quiet_cmd__cpp_lds_S = LDS     $@
 $(obj)/vmlinux.lds: $(src)/vmlinux.lds.S FORCE
 	$(call if_changed_dep,_cpp_lds_S)
 
-obj-$(CONFIG_KGDB) += kgdb.o
-obj-$(CONFIG_PCI) += pci.o
-obj-$(CONFIG_MODULES) += xtensa_ksyms.o module.o
-obj-$(CONFIG_SMP) += smp.o mxhead.o
+obj-$(CONFIG_KGDB) 		+= kgdb.o
+obj-$(CONFIG_PCI) 		+= pci.o
+obj-$(CONFIG_MODULES) 		+= xtensa_ksyms.o module.o
+obj-$(CONFIG_SMP) 		+= smp.o mxhead.o
+obj-$(CONFIG_KEXEC)		+= machine_kexec.o relocate_kernel.o
 
 
