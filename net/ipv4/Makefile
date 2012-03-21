@@ -60,8 +60,8 @@ CFLAGS_tcp_input.o  += $(call xcc-ifversion, -lt, 99003,  $(XTENSA_ALT_EXTRA_CFL
 CFLAGS_tcp_output.o += $(call xcc-ifversion, -lt, 99003,  $(XTENSA_ALT_EXTRA_CFLAGS))
 CFLAGS_tcp_timer.o  += $(call xcc-ifversion, -lt, 99003,  $(XTENSA_ALT_EXTRA_CFLAGS))
 
-# XTENSA_XCC_WORKAROUND_22626_ENABLED still required as xcc-9.0.2 (09002)
-CFLAGS_tcp_ipv4.o   += $(call xcc-ifversion, -lt, 99003,  $(XTENSA_ALT_EXTRA_CFLAGS))
+# XTENSA_XCC_WORKAROUND_22626_ENABLED no longer required as xcc-9.0.4 (09004)
+CFLAGS_tcp_ipv4.o   += $(call xcc-ifversion, -lt, 9004,  $(XTENSA_ALT_EXTRA_CFLAGS))
 
 # CFLAGS_tcp.o = -save-temps
 endif

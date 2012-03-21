@@ -45,9 +45,10 @@ ifdef CONFIG_USE_XTENSA_XCC_COMPILER
 
 XTENSA_ALT_EXTRA_CFLAGS := $(strip $(subst ",,$(CONFIG_XTENSA_ALT_EXTRA_CFLAGS)))#")))
 
-# XTENSA_XCC_WORKAROUND_22630_ENABLED - still unresolved as of xcc-9.0.2 (09002)
-# CFLAGS_vsprintf.o += $(call xcc-ifversion, -lt, 99003,  $(XTENSA_ALT_EXTRA_CFLAGS))
-CFLAGS_vsprintf.o += $(call xcc-ifversion, -lt, 99003,  -OPT:fold_ag=0)
+# XTENSA_XCC_WORKAROUND_22630_ENABLED - has been resolved as of xcc-9.0.4 (09004)
+# CFLAGS_vsprintf.o += $(call xcc-ifversion, -lt, 9004,  $(XTENSA_ALT_EXTRA_CFLAGS))
+CFLAGS_vsprintf.o += $(call xcc-ifversion, -lt, 9004,  -OPT:fold_ag=0)
+CFLAGS_vsprintf.o += $(call xcc-ifversion, -ge, 9004,  -fno-strict-overflow)
 
 endif
 

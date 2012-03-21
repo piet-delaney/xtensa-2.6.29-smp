@@ -25,8 +25,8 @@ XTENSA_ALT_EXTRA_CFLAGS := $(strip $(subst ",,$(CONFIG_XTENSA_ALT_EXTRA_CFLAGS))
 # EXTRA_CFLAGS +=  $(XTENSA_ALT_EXTRA_CFLAGS)
 # CFLAGS_addrlabel.o = -save-temps
 
-# XTENSA_XCC_WORKAROUND_22626_ENABLED still required as of xcc-9.0.2 (09002)
-CFLAGS_tcp_ipv6.o = $(call xcc-ifversion, -lt, 99003,  $(XTENSA_ALT_EXTRA_CFLAGS))
+# XTENSA_XCC_WORKAROUND_22626_ENABLED not required as of xcc-9.0.4 (09004)
+CFLAGS_tcp_ipv6.o = $(call xcc-ifversion, -lt, 9004,  $(XTENSA_ALT_EXTRA_CFLAGS))
 
 endif
 

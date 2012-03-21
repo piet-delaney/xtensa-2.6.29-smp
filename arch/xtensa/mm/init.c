@@ -31,21 +31,31 @@
 #include <asm/page.h>
 #include <asm/setup.h>
 
-#if !defined(__XCC__) || defined(XTENSA_XCC_WORKAROUND_22415_ENABLED)
+#if defined(XTENSA_XCC_WORKAROUND_22415_ENABLED) || defined(XTENSA_XCC_WORKAROUND_23816_ENABLED)
+/*
+ * Functions that gcc optimizes away but has extern statements for.
+ * XCC doesn't optimize them away via the GCC frontend. 
+ *
+ * Tentative list of remaining Workarounds not resolved by 22415.
+ *
+ * See Problem Reports: 22415, 23816.
+ */
+void __attribute__ ((weak)) __get_user_bad(void) 			{ panic(__func__); }
+void __attribute__ ((weak)) __put_user_bad(void) 			{ panic(__func__); }
+void __attribute__ ((weak)) __ftrace_bad_type(void)			{ panic(__func__); }
+#endif
+
+#if defined(XTENSA_XCC_WORKAROUND_22415_ENABLED)
 /*
  * Functions that gcc optimizes away but has extern statements for.
  * XCC doesn't optimize them away via the GCC frontend. 
  *
  * REMIND/FIXME:
- *    1. Add workarounds done with CONFIG_CC_OPTIMIZE_FOR_DEBUGGING.
- *
- *    2. XTENSA_XCC_WORKAROUND_22415_ENABLED should have been defined
+ *       XTENSA_XCC_WORKAROUND_22415_ENABLED should have been defined
  *       with using __XCC__.
  * 
- * See Problem Report: 22415
+ * See Problem Report: 22415, 23816.
  */
-void __attribute__ ((weak)) __get_user_bad(void) 			{ panic(__func__); }
-void __attribute__ ((weak)) __put_user_bad(void) 			{ panic(__func__); }
 void __attribute__ ((weak)) _NSIG_WORDS_is_unsupported_size(void) 	{ panic(__func__); }
 void __attribute__ ((weak)) __bad_unaligned_access_size(void) 		{ panic(__func__); }
 
@@ -59,7 +69,17 @@ int __attribute__ ((weak)) cookie_v4_init_sequence(void)		{ panic(__func__); }
 int __attribute__ ((weak)) cookie_v6_init_sequence(void)                { panic(__func__); }
 int __attribute__ ((weak)) ext2_xip_file_operations(void)               { panic(__func__); }
 int __attribute__ ((weak)) ring_buffer_page_too_big(void)		{ panic(__func__); }
-void __attribute__ ((weak)) __ftrace_bad_type(void)			{ panic(__func__); }
+int __attribute__ ((weak)) ring_buffer_page_too_big(void)		{ panic(__func__); }
+#endif
+
+#if !defined(CONFIG_CC_OPTIMIZE_FOR_DEBUGGING)
+/*
+ * Workarounds that were done for gcc with CONFIG_CC_OPTIMIZE_FOR_DEBUGGING;
+ * really should be done here. Also needed for xcc.
+ */
+void __attribute__ ((weak)) __xchg_called_with_bad_pointer(void)	{ panic(__func__); }
+void __attribute__ ((weak)) __cmpxchg_called_with_bad_pointer(void)	{ panic(__func__); }
+int  __attribute__ ((weak)) __bad_size(int size)               		{ panic(__func__); }
 #endif
 
 /* References to section boundaries */
