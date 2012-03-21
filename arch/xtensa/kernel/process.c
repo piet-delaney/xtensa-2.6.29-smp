@@ -308,10 +308,14 @@ void cpu_idle_monitor(int sched)
 			 *    3. Added /etc/syslog.conf
 			 *          kern.* /var/log/messages
 			 *          kern.* /dev/console
+			 *
+			 * If we we only have 1 core online it's better to just be quite.
 			 */
-			printk(KERN_DEBUG "%s: cpu:%d, ccount:%08lx, dt:%d, idle_count:[%lu, %lu]\n", __func__,
-			                       cpu,    ccount,       dt,    idle_count[0],  idle_count[1]);
-
+			if (num_online_cpus() > 1) {
+				printk(KERN_DEBUG "%s: cpu:%d, ccount:%08lx, dt:%d, idle_count:[%lu, %lu...]; num_online_cpus:%d\n", __func__,
+				                       cpu,    ccount,       dt,    idle_count[0],
+										    idle_count[1],            num_online_cpus());
+			}
 			idle_jiffies[cpu] = jiffies;	
 		}
 	} else 

@@ -81,6 +81,12 @@ int get_core_id(void)
         return (core_id & 0x3fff);
 }
 
+/*
+ * This is called somethat early during initialization:
+ *  kernel_thread()
+ *    kernel_init()
+ *      smp_prepare_cpus()
+ */
 void __init smp_prepare_cpus(unsigned int max_cpus)
 {
 }
@@ -128,15 +134,18 @@ void __init secondary_start_kernel(void)
 	unsigned int cpu = smp_processor_id();
 
 #ifdef CONFIG_DEBUG_KERNEL
+	/*
+	 * Global 'boot_secondary_processors' is sometimes
+	 * set by .xt-gdbinit for debugging SMP code.
+	 */
 	if (boot_secondary_processors == 0) {
-		printk("%s: boot_secondary_processors:%d; Hanging cpu:%d\n", 
-			__func__, boot_secondary_processors, cpu);
+		printk("%s: boot_secondary_processors == %d; HANGING cpu:%d!\n", __func__,
+			    boot_secondary_processors, cpu);
+
 		for(;;)
 			;
 	}
-
-	printk("%s: boot_secondary_processors:%d; Booting cpu:%d\n", 
-		__func__, cpu, boot_secondary_processors);
+	printk("%s: Booting current cpu:%d\n", __func__, cpu);
 #endif
 
 	/* Init EXCSAVE1 */
@@ -198,18 +207,34 @@ int __cpuinit __cpu_up(unsigned int cpu)
 	ret = wakeup_secondary_cpu(cpu, idle);
 
 	if (ret == 0) {
-		unsigned long timeout;
+		unsigned long timeout = jiffies + (HZ * CONFIG_SECONDARY_TIMEOUT);
+		unsigned long start = jiffies;
+		unsigned long seconds_expired = 0;
+		unsigned long seconds = 0;
 
-		timeout = jiffies + HZ * 20;
+		timeout = jiffies + (HZ * CONFIG_SECONDARY_TIMEOUT);
 		while (time_before(jiffies, timeout)) {
 			if (cpu_online(cpu))
 				break;
 			
 			udelay(10);
 			barrier();
+			seconds = (jiffies - start) / HZ;
+			if (time_after_eq(seconds, seconds_expired)) {
+				printk(" %ld", (CONFIG_SECONDARY_TIMEOUT - seconds_expired));
+				++seconds_expired;
+			}
 		}
+		printk("\n");
 
 		if (!cpu_online(cpu)) {
+#if defined(CONFIG_WAIT_FOR_XOCD) || defined(CONFIG_SECONDARIES_WAIT_FOR_XOCD)
+			printk(KERN_INFO "%s: Secondary CPU:%d was Waiting for XOCD but timed out. Removing from cpu present && possible maps.\n", __func__, cpu);
+#else
+			printk(KERN_WARNING "%s: Secondary CPU:%d didn't come online; Unexpected. Removing from cpu present && possible maps.\n", __func__, cpu);
+#endif
+			cpu_clear(cpu, cpu_present_map);
+			cpu_clear(cpu, cpu_possible_map);	/* Needed to stop daemons from timeing out */
 			ret = -EIO;
 			pr_debug("%s: ret = -EIO:%d);\n", __func__, ret);
 		}

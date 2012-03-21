@@ -104,7 +104,7 @@ void enable_local_irq(int intrnum)
 {
 	int cpu = smp_processor_id();
 	xtensa_irq_unmask(intrnum);
-	printk("cpu %d mask %x\n", cpu, get_sr(INTENABLE));
+	printk("%s: cpu:%d, intenable_mask:%x\n", cpu, get_sr(INTENABLE));
 
 }
 #endif

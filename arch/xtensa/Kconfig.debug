@@ -172,10 +172,29 @@ config IGNORE_PAGE_ARCH_1_BIT
 	  If in doubt, say "Y".
 
 config WAIT_FOR_XOCD
-	bool "Enable waiting for XOCD before starting the kernel"
+	bool "Wait for XOCD on Primary Processor before starting the kernel"
 	default n
 	help
-	  Useful when debugging the kernel and comming from U-Boot.
+	  Useful when debugging the kernel and coming from U-Boot or debugging
+	  SMP Kernels and wanting to attach to the secondary processors as they
+	  come out of run-stall.
+
+	  If unsure, say N.
+
+config SECONDARIES_WAIT_FOR_XOCD
+	bool "Wait for XOCD on Secondary Processors before leaving Secondary Reset Vector"
+	default n
+	select HOTPLUG_CPU
+	help
+	  Originally Intended for debugging secondary MX processors. The primary processor
+	  will take them out of run stall and leave them looping in the secondary
+	  reset vector wanting to gdb to attach.
+
+	  Also useful in a development environment where secondary processors are
+	  to be loaded with code which is different than the primary is running.
+	  In this case or if you fail to continue the secondary we use the HOTPLUG
+	  CPU code to cancel the cpu notifiers that would create unnecessary daemons
+	  for these CPUs.
 
 	  If unsure, say N.
 

@@ -35,8 +35,12 @@ void __init secondary_irq_init(void)
 
 int __init wakeup_secondary_cpu(unsigned int cpu, struct task_struct *ts)
 {
+	unsigned long run_stall_mask = get_er(0x200);
+
 	set_er(get_er(MPSCORE) & ~ (1 << cpu), MPSCORE);
-	printk("cpu %d %lx\n", cpu, get_er(0x200));
+
+	printk("%s: CPU:%d run_stall_mask:%lx ---> %lx\n", __func__, 
+		    cpu,   run_stall_mask, get_er(0x200);
 	return 0;
 }
 
@@ -79,7 +83,7 @@ void secondary_irq_enable(int intrnum)
 {
 	int cpu = smp_processor_id();
 	xtensa_irq_unmask(intrnum);
-	printk("%s: cpu:%d, mask:%x\n", __func__, cpu, get_sr(INTENABLE));
+	printk("%s: cpu:%d, intenable_mask:%x\n", __func__, cpu, get_sr(INTENABLE));
 
 }
 #endif

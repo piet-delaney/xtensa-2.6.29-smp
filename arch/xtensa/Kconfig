@@ -66,6 +66,15 @@ config MMU
 	  Build a Conventional Kernel with full MMU support,
 	  ie: it supports a TLB with auto-loading, Page protection.
 
+config V3_MMU
+	bool "VARIANT/Core has a V3 MMU (TLB is mapped virtual == physical)"
+	depends on !XTENSA_VARIANT_S6000 && !XTENSA_VARIANT_DC232A && !XTENSA_VARIANT_TEST_MMUHIFI_C3
+	default true
+	help
+	  Build a Conventional Kernel with full V3-MMU support,
+	  ie: TLB is mapped Virtual == Physical and can be changed by the Kernel
+	      to Linux std mappings.
+
 config VARIANT_IRQ_SWITCH
 	def_bool n
 
@@ -98,6 +107,19 @@ config XTENSA_VARIANT_DC232A
 
 config XTENSA_VARIANT_DC232B
 	bool "dc232b - Diamond 232L Standard Core Rev.B (LE)"
+	select MMU
+	help
+	  This variant refers to Tensilica's Diamond 232L Standard core Rev.B (LE).
+
+config XTENSA_VARIANT_DC233C
+	bool "dc233c - Diamond 233L Standard Core Rev.C (LE)"
+	select MMU
+	select V3_MMU
+	help
+	  This variant refers to Tensilica's Diamond 232L Standard core Rev.B (LE).
+
+config XTENSA_VARIANT_TEST_MMUHIFI_C3
+	bool "test_mmuhifi_c3 - Experimental 3 Core SMP HiFi-2 with a V2 MMU;  Extension of a Diamond DC_D_330HiFi; Non-Standard Core Rev.B (LE)"
 	select MMU
 	help
 	  This variant refers to Tensilica's Diamond 232L Standard core Rev.B (LE).
@@ -135,12 +157,14 @@ config XTENSA_VARIANT_CUSTOM_NAME
 
 config XTENSA_VARIANT_NAME
 	string
-	default "s6000"  if XTENSA_VARIANT_S6000
-	default "dc232l" if XTENSA_VARIANT_MMUBASELE
-	default "dc232a" if XTENSA_VARIANT_DC232A
-	default "dc232b" if XTENSA_VARIANT_DC232B
-	default "fsf"    if XTENSA_VARIANT_FSF
-	default XTENSA_VARIANT_CUSTOM_NAME if XTENSA_VARIANT_CUSTOM
+	default "s6000"  			if XTENSA_VARIANT_S6000
+	default "dc232l" 			if XTENSA_VARIANT_MMUBASELE
+	default "dc232a" 			if XTENSA_VARIANT_DC232A
+	default "dc232b" 			if XTENSA_VARIANT_DC232B
+	default "dc233c" 			if XTENSA_VARIANT_DC233C
+	default "test_mmuhifi_c3" 		if XTENSA_VARIANT_TEST_MMUHIFI_C3
+	default "fsf"    			if XTENSA_VARIANT_FSF
+	default XTENSA_VARIANT_CUSTOM_NAME	if XTENSA_VARIANT_CUSTOM
 
 
 config XTENSA_UNALIGNED_USER
@@ -221,6 +245,22 @@ config NR_CPUS
         range 2 32
         default "4"
 
+config HOTPLUG_CPU
+        bool "Support for hot-pluggable CPUs (EXPERIMENTAL)"
+        depends on SMP && EXPERIMENTAL
+        help
+          Compiles CPU_UP_CANCELED code in notifies like migration_call(),
+	  page_alloc_cpu_notify(), and rcu_cpu_notify() so we can cancel
+	  CPU threads after we know a cpu can't be brought up.
+
+          NOTE: Not enabling generic HOTPLUG support yet.
+
+config SECONDARY_TIMEOUT
+	depends on SMP
+	int "Time-out in seconds to wait for Secondary Processor to Start (1-60)"
+	range 1 60
+	default 5
+
 config LAZY_SMP_COPROCESSOR_REGISTER_FLUSHING
 	bool "Enable Lazy Flushing of Coprocessor Registers"
 	default true
@@ -243,7 +283,7 @@ config LAZY_SMP_COPROCESSOR_REGISTER_FLUSHING
 	  If in doubt, say N.
 
 config INITIALIZE_XTENSA_MMU_INSIDE_VMLINUX
-	bool "Initialize Xtensa V3 MMU inside the Linux kernel code"
+	bool "Initialize Xtensa MMU inside the Linux kernel code"
 	default true
 	help
 	  Earlier version initialized the MMU in the exception vector

@@ -13,7 +13,7 @@ MKIMAGE = $(srctree)/scripts/mkuboot.sh
 # Avoid RESET Vectors. Highest is curently in Cottonwood with
 #   CHAL_VECBASE_RESET_VADDR	0x00002000 
 #
-ifdef CONFIG_INITIALIZE_XTENSA_MMU_INSIDE_VMLINUX
+ifdef CONFIG_V3_MMU
 KERNEL_LOAD  = 0x00003000
 KERNEL_ENTRY = 0x00003000
 else

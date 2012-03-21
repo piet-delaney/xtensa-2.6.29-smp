@@ -19,6 +19,11 @@
 //#define cpu_data (&boot_cpu_data)
 //#define current_cpu_data boot_cpu_data
 
+/*
+ * HOTPLUG_CPU Stubs
+ */
+static inline int __cpu_disable(void) { return 0; }
+static inline void __cpu_die(int cpu) { }
 
 #if 0
 struct xtensa_cpuinfo {

@@ -76,14 +76,14 @@ _SetupOCD:
 	wer	a3, a2
 #endif
 
-#if 0 && defined(CONFIG_DEBUG_KERNEL)
+#if defined(CONFIG_WAIT_FOR_XOCD) || defined(CONFIG_SECONDARIES_WAIT_FOR_XOCD)
 	/*
-	 * Place a break point at wakeup_secondary_cpu() on 1st CPU.
-	 * REMIND-FIXME:
-	 *	There seems to be a bug in xt-ocd where it seems
-	 * 	to lose control and takes a double excpetions which
-	 *	can't be caught by xt-gdb. Current work-around is
-	 *	to restart xt-ocd daemon.
+	 * Place a break point at wakeup_secondary_cpu() on 1st CPU for
+	 * total control of taking the secondary processors out of run-stall.
+	 *
+	 * If you don't want to run Linux on the secondary procesors it's
+	 * possible to load them once the kernel has release run-stall
+	 * and allowed the secondary processors to loop here.
 	 */
 	movi    a0, 0
 _WaitOCD:

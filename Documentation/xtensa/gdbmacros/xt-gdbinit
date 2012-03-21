@@ -34,16 +34,21 @@ set var $mess_with_context_asid = 0
 # The HiFi-2 SMP Demo Board supports MX/SMP but not hw-watchpoints.
 #
 set var $hifi2_smp_demo_board = 1
-set var $hifi2_smp_core = 0
 
 if $hifi2_smp_demo_board
   set var $can_use_hw_watchpoints = 0
   set var $mx = 1
+  set var $smp = 1
   set var $debug_mx = 0
+  set var $smp_core = 0
+  set var $debug_xtos = 1
 else
   set var $can_use_hw_watchpoints = 1
   set var $mx = 0
+  set var $smp = 0
   set var $debug_mx = 0
+  set var $smp_core = 0
+   set var $debug_xtos = 0
 end
 
 set var $monitor_trace_supported = 0
@@ -119,7 +124,7 @@ end
 #
 set var $use_mmu = 1
 
-if $mx && $debug_mx
+if $mx && $smp && $debug_mx
 	set var $debug_secondary = 1
 	set var $debug_ipi_messages = 1
 	set var $debug_cpu_init = 1
@@ -132,7 +137,7 @@ else
 	set var $debug_ipi_messages = 0
 	set var $debug_cpu_init = 0
 	set var $debug_migration = 0
-	set var $debug_boot_secondary_processors = 0
+	set var $debug_boot_secondary_processors = 1
 end
 set logging on
 set logging file kgdb.log
@@ -160,47 +165,12 @@ set output-radix 16
 # more than once.
 delete
 
-# set remote memory-write-packet-size 524288
-#
-# DEFAULT is 262K if fixed
-# ========================
-# 217 KB/s with no Verify
-# FAILS FOR verify all
-# set remote memory-write-packet-size 262144 
-#
-# Works now with read ahead at 76  KB/s
-# set remote memory-write-packet-size 131072
-#
-# 77  KB/s with ASYNC jtag-verify all on
-# 183 KB/s with no Verify
-# set  remote memory-write-packet-size 65536
-#
-# 189 KB/s no jtag-veriry
-# FAILS for jtag-verify all
-# set remote memory-write-packet-size 32768
-#
-# 193 KB/s no jtag-veriry
-# 40KB/s with ASYNC verify write on
-# TOO BIG for WINDOWS?
 # set remote memory-write-packet-size 16384
-#
-# 195 KBps no jtag-veriify
-# 85 KBps with jtag-verfiy all and ASYNC
-# set remote memory-write-packet-size  8192
-#
-# 184K without jtag-verify
-# set remote memory-write-packet-size  4096
-#
-# set remote memory-write-packet-size  2048
-# set remote memory-write-packet-size  999
-# set remote memory-write-packet-size  512
-#  set remote memory-write-packet-size  256
-#
-set  remote memory-write-packet-size  fixed
+# set remote memory-write-packet-size fixed
 show remote memory-write-packet-size
 
-echo "set remotetimeout 60\n"
-set remotetimeout 60
+# echo "set remotetimeout 60\n"
+# set remotetimeout 60
 show remotetimeout
 
 
@@ -211,15 +181,15 @@ if $mx
 	add-symbol-file vmlinux 0xd0003000
 	file arch/xtensa/boot/Image.elf
 
-        if ($hifi2_smp_core == 0)
-	    target remote localhost:20000 &spill_location_0
+        if ($smp_core == 0)
+	     target remote localhost:20000 &spill_location_0
 	end
 
-	if ($hifi2_smp_core == 1)
+	if ($smp_core == 1)
 	    target remote localhost:20001 &spill_location_1
 	end
 
-	if ($hifi2_smp_core == 2)
+	if ($smp_core == 2)
 	    target remote localhost:20002 &spill_location_2
 	end
 else
@@ -513,8 +483,9 @@ def set_breakpoints
 		break filemap_fault
 	end
 
-	if ($mx != 0)
-	    # echo "MX/SMP\n"
+	if ($mx && $smp)
+	    echo "\n"
+	    echo "MX running SMP\n"
 	    if ($debug_cpu_init != 0)
 		echo "\n"
 		echo "Setting CPU Initialization Breakpoints\n"

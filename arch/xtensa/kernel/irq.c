@@ -338,8 +338,12 @@ void __init secondary_irq_init(void)
 
 int __init wakeup_secondary_cpu(unsigned int cpu, struct task_struct *ts)
 {
-	set_er(get_er(MPSCORE) & ~ (1 << cpu), MPSCORE);
-	printk("cpu %d %lx\n", cpu, get_er(0x200));
+	unsigned long run_stall_mask = get_er(MPSCORE);
+
+	set_er(run_stall_mask & ~ (1 << cpu), MPSCORE);
+
+	printk("%s: cpu:%d, run_stall_mask:%lx ---> %lx\n", __func__, 
+		    cpu,    run_stall_mask, get_er(0x200));
 	return 0;
 }
 

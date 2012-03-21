@@ -125,24 +125,41 @@ struct platform_device lx60_oeth_platform_device = {
  * possability and work down to the smallest.
  */
 struct board_info_s {
-		unsigned int 	 himem;
+		unsigned int 	 himem;			/* Highest Available */
+		unsigned int 	 usemem;		/* Highest to Allow Linux to use */
 		enum 		 xtensa_board board;
 		char 		*board_name;
 };
 struct board_info_s  board_info[4] = {
-	{ .himem = (unsigned int) ((128 * 1024 * 1024) - 1),
+	{ .himem  = (unsigned int) ((128 * 1024 * 1024) - 1),
+	  .usemem = (unsigned int) ((128 * 1024 * 1024) - 1),
 	  .board = AVNET_ML605,
 	  .board_name = "AVNET_ML605"
 	},
-	{ .himem = (unsigned int) ((96 * 1024 * 1024) - 1),
+#if defined(CONFIG_ARCH_HAS_SMP) && defined(CONFIG_SMP) && defined(CONFIG_SECONDARIES_WAIT_FOR_XOCD)
+	/*
+	 * Only use 2/3 of the available memory in this special case;
+	 * the user may want to load something different onto secondary(s).
+	 */
+	{ .himem  = (unsigned int) ((96 * 1024 * 1024) - 1),
+	  .usemem = (unsigned int) ((64 * 1024 * 1024) - 1),
+	  .board = AVNET_LX200,
+	  .board_name = "AVNET_LX200 (Linux will allocate 64M of 96M)"
+	},
+#else
+	{ .himem  = (unsigned int) ((96 * 1024 * 1024) - 1),
+	  .usemem = (unsigned int) ((96 * 1024 * 1024) - 1),
 	  .board = AVNET_LX200,
 	  .board_name = "AVNET_LX200"
 	},
-	{ .himem = (unsigned int) ((64 * 1024 * 1024) - 1),
+#endif
+	{ .himem  = (unsigned int) ((64 * 1024 * 1024) - 1),
+	  .usemem = (unsigned int) ((64 * 1024 * 1024) - 1),
 	  .board = AVNET_LX60,
 	  .board_name = "AVNET_LX60"
 	},
-	{ .himem = (unsigned int) ((48 * 1024 * 1024) - 1),
+	{ .himem  = (unsigned int) ((48 * 1024 * 1024) - 1),
+	  .usemem = (unsigned int) ((48 * 1024 * 1024) - 1),
 	  .board = AVNET_LX110,
 	  .board_name = "AVNET_LX110"
 	}
@@ -245,7 +262,7 @@ void platform_init(bp_tag_t *bootparams)
 	trap_set_early_C_handler(EXCCAUSE_LOAD_STORE_ADDR_ERROR, saved_addr_exception_hander_addr);
 
 	if (ptr) {
-		platform_mem_size = bi->himem + 1;
+		platform_mem_size = bi->usemem + 1;
 		platform_board = bi->board;
 		platform_board_name = bi->board_name;
 	} else {
